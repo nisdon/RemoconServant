@@ -194,7 +194,9 @@ int RemoconOutData(void);
 #define READTIMING						100		/* 読み込み周期[usec] */
 #define READCODE_END_CNT				200 	/* この回数OFFが続いたら終了 1000 = 100[ms] / 0.1[ms] */
 #define SENDCODE_END_CNT				200 	/* 終了コードこの回数OFFを続ける 1000 = 100[ms] / 0.1[ms] */
-#define NEXT_DATA_WAIT					500		/* 次のデータの読み込みをこの時間OFFを継続したら開始する 2000 = 200[ms] / 0.1[ms] */
+//#define NEXT_DATA_WAIT					500		/* 次のデータの読み込みをこの時間OFFを継続したら開始する 2000 = 200[ms] / 0.1[ms] */
+/* リピート信号の間隔に合せて修正 */
+#define NEXT_DATA_WAIT					1000		/* 次のデータの読み込みをこの時間OFFを継続したら開始する 2000 = 200[ms] / 0.1[ms] */
 #define DATA_CODE_INTERVAL_MIN_CNT		40 		/* データが２つにわかれているコードのデータ間最小間隔 40 = 4[ms] / 0.1[ms] */
 #define DATA_CODE_INTERVAL_MAX_CNT		500 	/* データが２つにわかれているコードのデータ間最大間隔 500 = 50[ms] / 0.1[ms] */
 #define DATA_CODE_INTERVAL_SEND_CNT		260 	/* データが２つにわかれているコードの送信データ間隔 300 = 30[ms] / 0.1[ms] */
@@ -377,6 +379,9 @@ unsigned int ui_PWM50_Set_Val = PWM_50;
 
 // デバッグ
 unsigned char debug_ary[4] = {0};
+
+// 追加メモリ
+unsigned char uc_key_off = 0;
 
 
 // usbでの送信に使うバッファはここで宣言
@@ -886,7 +891,8 @@ void ProcessIO(void)
 									keyboard_buffer[pressed_keys] = eeprom_1data[EEPROM_DATA_VALUE];
 									pressed_keys++;
 								}
-								hid_report_out_flag = 5;
+//								hid_report_out_flag = 5;
+								hid_report_out_flag = 1;
 								break;
 							case MODE_VOLUME:
 							    switch(eeprom_1data[EEPROM_DATA_VALUE])
@@ -932,6 +938,21 @@ void ProcessIO(void)
     }
     if(!HIDTxHandleBusy(lastINTransmissionKeyboard))
     {	       	//Load the HID buffer
+		/* リピート終了チェック */
+		if(uc_key_off == 1 &&
+		   hid_report_out_flag == 0)
+		{	// キーOFF
+			keyboard_buffer[0] =
+				keyboard_buffer[2] =
+				keyboard_buffer[3] =
+				keyboard_buffer[4] =
+				keyboard_buffer[5] =
+				keyboard_buffer[6] =
+				keyboard_buffer[7] = 0;
+			hid_report_out_flag = 1;
+			uc_key_off = 0;
+		}
+
     	hid_report_in[0] = keyboard_buffer[0];
     	hid_report_in[1] = keyboard_buffer[1];
 		hid_report_in[2] = keyboard_buffer[2];
@@ -940,14 +961,6 @@ void ProcessIO(void)
     	hid_report_in[5] = keyboard_buffer[5];
     	hid_report_in[6] = keyboard_buffer[6];
     	hid_report_in[7] = keyboard_buffer[7];
-
-		keyboard_buffer[0] =
-		keyboard_buffer[2] =
-		keyboard_buffer[3] =
-		keyboard_buffer[4] =
-		keyboard_buffer[5] =
-		keyboard_buffer[6] =
-		keyboard_buffer[7] = 0;
 
 		if( hid_report_out_flag > 0 )
 		{
@@ -2706,6 +2719,7 @@ int RemoconReceiveData(void)
 			/* カウンタリセット */
 			ui_on_count = 0;
 			ui_off_count = 0;
+			uc_key_off = 1;
 		}
 	}
 		
