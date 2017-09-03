@@ -94,7 +94,8 @@ int RemoconReceiveData(void);
 #define MODE_KEYBOARD	1
 #define	MODE_VOLUME		2
 //#define	MODE_JOYSTICK	2
-#define EEPROM_DATA_NUM			20	/* EEPROMŠi”[ƒf[ƒ^” */
+//#define EEPROM_DATA_NUM			20	/* EEPROMŠi”[ƒf[ƒ^” */
+#define EEPROM_DATA_NUM			50	/* EEPROMŠi”[ƒf[ƒ^” */
 #define EEPROM_DATA_SIZE		10	/* EEPROMŠi”[‚Pƒf[ƒ^‚ÌƒTƒCƒY */
 #define EEPROM_DATA_TOTAL_SIZE		EEPROM_DATA_NUM*EEPROM_DATA_SIZE	/* EEPROMŠi”[ƒf[ƒ^‚Ìƒg[ƒ^ƒ‹ƒTƒCƒY */
 #define	EEPROM_DATA_MODE		0	//	0:ƒ‚[ƒh
@@ -165,13 +166,10 @@ int RemoconReceiveData(void);
 #define READBUFFER_DATA_SIZE_EX			2		/* Šg’£ óMƒoƒbƒtƒ@ƒTƒCƒY@ƒf[ƒ^ƒTƒCƒYi’PˆÊbitj(1byte) */
 #define READBUFFER_DATA_AREA_SIZE_EX	32		/* Šg’£ óMƒoƒbƒtƒ@ƒTƒCƒY@ƒf[ƒ^ƒGƒŠƒAƒTƒCƒY(32byte) */
 #define READBUFFER_SIZE_EX				READBUFFER_FORMAT_SIZE_EX+READBUFFER_DATA_SIZE_EX+READBUFFER_DATA_AREA_SIZE_EX	/* Šg’£ óMƒoƒbƒtƒ@ƒTƒCƒY@ƒ_ƒR[ƒh(1byte) + ƒf[ƒ^(32byte) */
+
 #define FORMATCODE_UNKNOWN				0		/* ÔŠOü’ÊMƒtƒH[ƒ}ƒbƒg •s–¾ */
-#define FORMATCODE_KADEN				1		/* ÔŠOü’ÊMƒtƒH[ƒ}ƒbƒg ‰Æ“d‹¦ */
 #define FORMATCODE_NEC					2		/* ÔŠOü’ÊMƒtƒH[ƒ}ƒbƒg NEC */
-#define FORMATCODE_SONY					3		/* ÔŠOü’ÊMƒtƒH[ƒ}ƒbƒg SONY */
-#define FORMATCODE_MITSU				4		/* ÔŠOü’ÊMƒtƒH[ƒ}ƒbƒg MITSUBISHI */
-#define FORMATCODE_DAIKIN				5		/* ÔŠOü’ÊMƒtƒH[ƒ}ƒbƒg DAIKIN */
-#define FORMATCODE_DAIKIN2				6		/* ÔŠOü’ÊMƒtƒH[ƒ}ƒbƒg DAIKIN2 */
+
 #define RECEIVE_WAIT_MODE_NONE			0		/* PC‘¤ÔŠOüƒR[ƒhóM‘Ò‚¿ƒ‚[ƒh@NONE */
 #define RECEIVE_WAIT_MODE_WAIT			1		/* PC‘¤ÔŠOüƒR[ƒhóM‘Ò‚¿ƒ‚[ƒh@WAIT */
 
@@ -186,22 +184,6 @@ int RemoconReceiveData(void);
 #define DATA_CODE_INTERVAL_SEND_CNT		260 	/* ƒf[ƒ^‚ª‚Q‚Â‚É‚í‚©‚ê‚Ä‚¢‚éƒR[ƒh‚Ì‘—Mƒf[ƒ^ŠÔŠu 300 = 30[ms] / 0.1[ms] */
 #define DATA_MAX_BITS					0xFF	/* ƒf[ƒ^ƒR[ƒh‚ÌÅ‘åƒrƒbƒg’· */
 
-/* ‰Æ“d‹¦ */
-#define READERCODE_ON_KADEN			32		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔ 3.2ms / 0.1ms */
-#define READERCODE_OFF_KADEN		16		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ 1.6ms / 0.1ms */
-#define READERCODE_ON_T_KADEN		2		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔ 2T */
-#define READERCODE_ON_MIN_KADEN		24		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔÅ¬ 24 = MIN40 / 12T * 8T */
-#define READERCODE_OFF_MIN_KADEN	12		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔÅ¬ 12 = MIN40 / 12T * 4T */
-//#define READERCODE_OFF_KADEN		1600	/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ [usec] */
-#define READERCODE_MIN_KADEN		40		/* ƒŠ[ƒ_ƒR[ƒh’· ((3.2 + 1.6) - 0.8) / 0.1 [msec] */
-#define READERCODE_MAX_KADEN		56		/* ƒŠ[ƒ_ƒR[ƒh’· ((3.2 + 1.6) + 0.8) / 0.1 [msec] */
-#define DATACODE_DATA1_KADEN		8		/* ƒf[ƒ^ƒR[ƒh0/1”»’fŠî€ OFF‚Ì’·‚³‚ª‚±‚êˆÈã‚È‚ç1 */
-#define DATACODE_MIN_KADEN			4		/* ƒf[ƒ^ƒR[ƒh’·Å¬ data0 ((0.4 + 0.4) - 0.4) / 0.1 [msec] */
-#define DATACODE_MAX_KADEN			20		/* ƒf[ƒ^ƒR[ƒh’·Å‘å data1 ((0.4 + 1.2) + 0.4) / 0.1 [msec] */
-#define DATA0_ON_KADEN				4		/* ƒf[ƒ^‚O ONŠÔ 0.4ms / 0.1ms */
-#define DATA0_OFF_KADEN				4		/* ƒf[ƒ^‚O OFFŠÔ 0.4ms / 0.1ms */
-#define DATA1_ON_KADEN				4		/* ƒf[ƒ^‚P ONŠÔ 0.4ms / 0.1ms */
-#define DATA1_OFF_KADEN				12		/* ƒf[ƒ^‚P OFFŠÔ 1.2ms / 0.1ms */
 /* NEC */
 #define READERCODE_ON_NEC			90		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔ 9.0ms / 0.1ms */
 #define READERCODE_OFF_NEC			45		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ 4.5ms / 0.1ms */
@@ -218,83 +200,6 @@ int RemoconReceiveData(void);
 #define DATA0_OFF_NEC				5		/* ƒf[ƒ^‚O OFFŠÔ 0.56ms / 0.1ms */
 #define DATA1_ON_NEC				5		/* ƒf[ƒ^‚P ONŠÔ 0.56ms / 0.1ms */
 #define DATA1_OFF_NEC				16		/* ƒf[ƒ^‚P OFFŠÔ 1.68ms / 0.1ms */
-/* SONY */
-#define READERCODE_ON_SONY			24		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔ 2.4ms / 0.1ms */
-#define READERCODE_OFF_SONY			6		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ 0.6ms / 0.1ms */
-#define READERCODE_ON_T_SONY		4		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔ 4T */
-#define READERCODE_ON_MIN_SONY		16		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔÅ¬ 16 = MIN24 / 5T * 4T */
-#define READERCODE_OFF_MIN_SONY		4		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔÅ¬ 4 = MIN24 / 5T * 1T */
-//#define READERCODE_OFF_SONY			600		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ [usec] */
-#define READERCODE_MIN_SONY			24		/* ƒŠ[ƒ_ƒR[ƒh’· ((2.4 + 0.6) - 0.6) / 0.1 [msec] */
-#define READERCODE_MAX_SONY			36		/* ƒŠ[ƒ_ƒR[ƒh’· ((2.4 + 0.6) + 0.6) / 0.1 [msec] */
-#define DATACODE_DATA1_SONY			9		/* ƒf[ƒ^ƒR[ƒh0/1”»’fŠî€ ON‚Ì’·‚³‚ª‚±‚êˆÈã‚È‚ç1 */
-#define DATACODE_MIN_SONY			6		/* ƒf[ƒ^ƒR[ƒh’·Å¬ data0 ((0.6 + 0.6) - 0.6) / 0.1 [msec] */
-#define DATACODE_MAX_SONY			24		/* ƒf[ƒ^ƒR[ƒh’·Å‘å data1 ((1.2 + 0.6) + 0.6) / 0.1 [msec] */
-#define DATA0_ON_SONY				6		/* ƒf[ƒ^‚O ONŠÔ 0.6ms / 0.1ms */
-#define DATA0_OFF_SONY				6		/* ƒf[ƒ^‚O OFFŠÔ 0.6ms / 0.1ms */
-#define DATA1_ON_SONY				12		/* ƒf[ƒ^‚P ONŠÔ 1.2ms / 0.1ms */
-#define DATA1_OFF_SONY				6		/* ƒf[ƒ^‚P OFFŠÔ 0.6ms / 0.1ms */
-/* MITSUBISHI ƒŠ[ƒ_ƒR[ƒh‚È‚µA‚¢‚«‚È‚èƒf[ƒ^ */
-#define DATACODE_DATA1_M			14		/* ƒf[ƒ^ƒR[ƒh0/1”»’fŠî€ OFF‚Ì’·‚³‚ª‚±‚êˆÈã‚È‚ç1 */
-#define DATACODE_MIN_M				8		/* ƒf[ƒ^ƒR[ƒh’·Å¬ data0 ((0.4 + 0.8) - 0.4) / 0.1 [msec] */
-#define DATACODE_MAX_M				28		/* ƒf[ƒ^ƒR[ƒh’·Å‘å data1 ((0.4 + 2.0) + 0.4) / 0.1 [msec] */
-#define DATA0_ON_M					4		/* ƒf[ƒ^‚O ONŠÔ 0.4ms / 0.1ms */
-#define DATA0_OFF_M					8		/* ƒf[ƒ^‚O OFFŠÔ 0.8ms / 0.1ms */
-#define DATA1_ON_M					4		/* ƒf[ƒ^‚P ONŠÔ 0.4ms / 0.1ms */
-#define DATA1_OFF_M					20		/* ƒf[ƒ^‚P OFFŠÔ 2.0ms / 0.1ms */
-/* DAIKIN 1 */
-#if 1
-#define READERCODE_ON_DAI			44		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔ 4.4ms / 0.1ms */
-#define READERCODE_OFF_DAI			22		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ 2.2ms / 0.1ms */
-#define READERCODE_ON_T_DAI			2		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔ 2T */
-#define READERCODE_ON_MIN_DAI		29		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔÅ¬ 29 = MIN44 / 15T * 10T */
-#define READERCODE_OFF_MIN_DAI		14		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔÅ¬ 14 = MIN44 / 15T * 5T */
-//#define READERCODE_OFF_DAI		1600	/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ [usec] */
-#define READERCODE_MIN_DAI			44		/* ƒŠ[ƒ_ƒR[ƒh’· ((4.4 + 2.2) - 2.2) / 0.1 [msec] */
-#define READERCODE_MAX_DAI			88		/* ƒŠ[ƒ_ƒR[ƒh’· ((4.4 + 2.2) + 2.2) / 0.1 [msec] */
-#define DATACODE_DATA1_DAI			7		/* ƒf[ƒ^ƒR[ƒh0/1”»’fŠî€ OFF‚Ì’·‚³‚ª‚±‚êˆÈã‚È‚ç1 */
-#define DATACODE_MIN_DAI			4		/* ƒf[ƒ^ƒR[ƒh’·Å¬ data0 ((0.4 + 0.4) - 0.4) / 0.1 [msec] */
-#define DATACODE_MAX_DAI			23		/* ƒf[ƒ^ƒR[ƒh’·Å‘å data1 ((0.4 + 1.3) + 0.4) / 0.1 [msec] */
-#define DATA0_ON_DAI				4		/* ƒf[ƒ^‚O ONŠÔ 0.4ms / 0.1ms */
-#define DATA0_OFF_DAI				4		/* ƒf[ƒ^‚O OFFŠÔ 0.5ms / 0.1ms */
-#define DATA1_ON_DAI				4		/* ƒf[ƒ^‚P ONŠÔ 0.4ms / 0.1ms */
-#define DATA1_OFF_DAI				13		/* ƒf[ƒ^‚P OFFŠÔ 1.3ms / 0.1ms */
-#endif
-#if 0
-#define READERCODE_ON_DAI			50		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔ 5.0ms / 0.1ms */
-#define READERCODE_OFF_DAI			25		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ 2.5ms / 0.1ms */
-#define READERCODE_ON_T_DAI			2		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔ 2T */
-#define READERCODE_ON_MIN_DAI		33		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔÅ¬ 33 = MIN50 / 15T * 10T */
-#define READERCODE_OFF_MIN_DAI		16		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔÅ¬ 16 = MIN50 / 15T * 5T */
-//#define READERCODE_OFF_DAI		1600	/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ [usec] */
-#define READERCODE_MIN_DAI			50		/* ƒŠ[ƒ_ƒR[ƒh’· ((5.0 + 2.5) - 2.5) / 0.1 [msec] */
-#define READERCODE_MAX_DAI			100		/* ƒŠ[ƒ_ƒR[ƒh’· ((5.0 + 2.5) + 2.5) / 0.1 [msec] */
-#define DATACODE_DATA1_DAI			7		/* ƒf[ƒ^ƒR[ƒh0/1”»’fŠî€ OFF‚Ì’·‚³‚ª‚±‚êˆÈã‚È‚ç1 */
-#define DATACODE_MIN_DAI			5		/* ƒf[ƒ^ƒR[ƒh’·Å¬ data0 ((0.5 + 0.5) - 0.5) / 0.1 [msec] */
-#define DATACODE_MAX_DAI			25		/* ƒf[ƒ^ƒR[ƒh’·Å‘å data1 ((0.5 + 1.5) + 0.5) / 0.1 [msec] */
-#define DATA0_ON_DAI				5		/* ƒf[ƒ^‚O ONŠÔ 0.5ms / 0.1ms */
-#define DATA0_OFF_DAI				5		/* ƒf[ƒ^‚O OFFŠÔ 0.5ms / 0.1ms */
-#define DATA1_ON_DAI				5		/* ƒf[ƒ^‚P ONŠÔ 0.5ms / 0.1ms */
-#define DATA1_OFF_DAI				15		/* ƒf[ƒ^‚P OFFŠÔ 1.5ms / 0.1ms */
-#endif
-/* DAIKIN 2 */
-#define READERCODE_ON_DAI2			30		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔ 3.0ms / 0.1ms */
-#define READERCODE_OFF_DAI2			90		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ 9.0ms / 0.1ms */
-#define READERCODE_OFF_T_DAI2		3		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ 3T */
-#define READERCODE_ON_MIN_DAI2		22		/* ƒŠ[ƒ_ƒR[ƒh ONŠÔÅ¬ 22 = MIN90 / 12T * 3T */
-#define READERCODE_OFF_MIN_DAI2		67		/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔÅ¬ 67 = MIN90 / 12T * 9T */
-//#define READERCODE_OFF_DAI		1600	/* ƒŠ[ƒ_ƒR[ƒh OFFŠÔ [usec] */
-#define READERCODE_MIN_DAI2			90		/* ƒŠ[ƒ_ƒR[ƒh’· ((3.0 + 9.0) - 3.0) / 0.1 [msec] */
-#define READERCODE_MAX_DAI2			150		/* ƒŠ[ƒ_ƒR[ƒh’· ((3.0 + 9.0) + 3.0) / 0.1 [msec] */
-// ƒf[ƒ^•”‚ÍDAIKIN1‚Æ“¯‚¶
-//#define DATACODE_DATA1_DAI2			7		/* ƒf[ƒ^ƒR[ƒh0/1”»’fŠî€ OFF‚Ì’·‚³‚ª‚±‚êˆÈã‚È‚ç1 */
-//#define DATACODE_MIN_DAI2			5		/* ƒf[ƒ^ƒR[ƒh’·Å¬ data0 ((0.5 + 0.5) - 0.5) / 0.1 [msec] */
-//#define DATACODE_MAX_DAI2			25		/* ƒf[ƒ^ƒR[ƒh’·Å‘å data1 ((0.5 + 1.5) + 0.5) / 0.1 [msec] */
-//#define DATA0_ON_DAI2				5		/* ƒf[ƒ^‚O ONŠÔ 0.5ms / 0.1ms */
-//#define DATA0_OFF_DAI2				5		/* ƒf[ƒ^‚O OFFŠÔ 0.5ms / 0.1ms */
-//#define DATA1_ON_DAI2				5		/* ƒf[ƒ^‚P ONŠÔ 0.5ms / 0.1ms */
-//#define DATA1_OFF_DAI2				15		/* ƒf[ƒ^‚P OFFŠÔ 1.5ms / 0.1ms */
-
 
 
 
@@ -338,9 +243,6 @@ unsigned int ui_next_data_wait_cnt = 0;						/* Ÿ‚Ìƒf[ƒ^‚Ü‚Å‚ÌOFF‚ÌŒp‘±ŠÔƒJƒ
 
 unsigned char uc_now_signal = 0;
 unsigned char uc_pre_signal = 0;
-
-// ÔŠOüƒŠƒ‚ƒRƒ“ƒf[ƒ^‘—M—p•Ï”
-unsigned char uc_first_data_bit = 0;
 
 // ƒfƒoƒbƒO
 unsigned char debug_ary[4] = {0};
@@ -704,7 +606,7 @@ void UserInit(void)
 	volume_buffer[0] = 0;
 
 	// EEPROM‚ÌÔŠOüƒf[ƒ^‚Ì0ƒoƒCƒg–Ú‚ğŠi”[‚·‚é
-	for( fi = 0, fj = EEPROM_DATA_DATACODE; fi < EEPROM_DATA_NUM; fi++, fj+=EEPROM_DATA_SIZE )
+	for( fi = 0; fi < EEPROM_DATA_NUM; fi++ )
 	{
 //		eeprom_check_data[fi] = ReadEEPROM( fi * EEPROM_DATA_SIZE + EEPROM_DATA_DATACODE);
 		eeprom_check_data[fi] = IRDATA[ fi ][ EEPROM_DATA_DATACODE];
@@ -1405,37 +1307,16 @@ int RemoconReceiveData(void)
 			/*  */
 			set_bit_data = 0xFF;
 		
-			/* ”»’è */
-			/* ‰Æ“d‹¦”»’è */
-			if( uc_format_type == FORMATCODE_KADEN )
+			if(DATACODE_MIN_NEC <= (ui_on_count + ui_off_count)
+				&& (ui_on_count + ui_off_count) <= DATACODE_MAX_NEC)
 			{
-				if(DATACODE_MIN_KADEN <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= DATACODE_MAX_KADEN)
-				{
-					if( ui_off_count >= DATACODE_DATA1_KADEN )
-					{	/* DATA 1 */
-						set_bit_data = ON;
-					}
-					else
-					{	/*DATA 0*/
-						set_bit_data = OFF;
-					}
+				if( ui_off_count >= DATACODE_DATA1_NEC )
+				{	/* DATA 1 */
+					set_bit_data = ON;
 				}
-			}
-			/* NEC”»’è */
-			else if( uc_format_type == FORMATCODE_NEC )
-			{
-				if(DATACODE_MIN_NEC <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= DATACODE_MAX_NEC)
-				{
-					if( ui_off_count >= DATACODE_DATA1_NEC )
-					{	/* DATA 1 */
-						set_bit_data = ON;
-					}
-					else
-					{	/*DATA 0*/
-						set_bit_data = OFF;
-					}
+				else
+				{	/*DATA 0*/
+					set_bit_data = OFF;
 				}
 			}
 
@@ -1463,8 +1344,6 @@ int RemoconReceiveData(void)
 			{
 				/* óMó‘ÔƒCƒ“ƒNƒŠƒƒ“ƒg */
 				uc_read_status = READSTATUS_READ_END;
-				/* 1stƒf[ƒ^‚Ìƒf[ƒ^’·‚ğƒZƒbƒg */
-				uc_first_data_bit = (unsigned char)(ui_data_pos & 0xFF);
 			}
 	
 
@@ -1501,7 +1380,6 @@ int RemoconReceiveData(void)
 		uc_read_status = READSTATUS_NEXT_DATA_WAIT;
 		ui_next_data_wait_cnt = 0;
 		ui_data_pos = 0;
-		uc_first_data_bit = 0;
 	}
 	/* Ÿƒf[ƒ^‘Ò‚¿ */
 	if ( uc_read_status == READSTATUS_NEXT_DATA_WAIT ){
@@ -1534,8 +1412,58 @@ int RemoconReceiveData(void)
 }
 const unsigned char rom IRDATA[][10] =
 {
-	{MODE_KEYBOARD,0x52,0,0x82,0x20,0x10,0x0d,0xf2,0,0},
-	{MODE_KEYBOARD,0x52,0,0x82,0x20,0x10,0x0d,0xf2,0,0}
+//	{MODE_KEYBOARD,0x52,0x00,0x82,0x20,0x10,0x0d,0xf2,0,0},
+
+	{MODE_KEYBOARD,0x69,0x02,0x82,0x20,0x10,0x20,0xdf,0,0},	// Pow
+	{MODE_KEYBOARD,0x6f,0x00,0x82,0x20,0x10,0x02,0xfd,0,0},	// Player On
+	{MODE_KEYBOARD,0x70,0x00,0x82,0x20,0x10,0x03,0xfc,0,0},	// Player Off
+	{MODE_KEYBOARD,0x72,0x01,0x82,0x20,0x10,0x04,0xfb,0,0},	// Rec
+	{MODE_KEYBOARD,0x6f,0x01,0x82,0x20,0x10,0x25,0xda,0,0},	// Epg
+	{MODE_KEYBOARD,0x71,0x00,0x82,0x20,0x10,0x06,0xf9,0,0},	// Tv
+	{MODE_KEYBOARD,0x72,0x00,0x82,0x20,0x10,0x07,0xf8,0,0},	// Dvd
+	{MODE_KEYBOARD,0x29,0x00,0x82,0x20,0x10,0x08,0xf7,0,0},	// Back
+	{MODE_KEYBOARD,0x6d,0x01,0x82,0x20,0x10,0x09,0xf6,0,0},	// Cc
+	{MODE_KEYBOARD,0x6a,0x02,0x82,0x20,0x10,0x2a,0xd5,0,0},	// Mute
+	{MODE_KEYBOARD,0x00,0x00,0x82,0x20,0x10,0x0b,0xf4,0,0},	// Info
+	{MODE_KEYBOARD,0x6e,0x01,0x82,0x20,0x10,0x0c,0xf3,0,0},	// ‰¹ºØ‘Ö
+	{MODE_KEYBOARD,0x6c,0x01,0x82,0x20,0x10,0x0e,0xf1,0,0},	// ‘S‰æ–Ê
+	{MODE_KEYBOARD,0x5c,0x00,0x82,0x20,0x10,0x00,0xff,0,0},	// Left Arrow
+	{MODE_KEYBOARD,0x5e,0x00,0x82,0x20,0x10,0x11,0xee,0,0},	// Right Arrow
+	{MODE_KEYBOARD,0x60,0x00,0x82,0x20,0x10,0x0d,0xf2,0,0},	// Up Arrow
+	{MODE_KEYBOARD,0x5a,0x00,0x82,0x20,0x10,0x13,0xec,0,0},	// Down Arrow
+	{MODE_KEYBOARD,0x28,0x00,0x82,0x20,0x10,0x30,0xcf,0,0},	// Ok
+	{MODE_KEYBOARD,0x13,0x03,0x82,0x20,0x10,0x35,0xca,0,0},	// Play
+	{MODE_KEYBOARD,0x13,0x01,0x82,0x20,0x10,0x16,0xe9,0,0},	// Pause
+	{MODE_KEYBOARD,0x16,0x03,0x82,0x20,0x10,0x17,0xe8,0,0},	// Stop
+	{MODE_KEYBOARD,0x71,0x02,0x82,0x20,0x10,0x18,0xe7,0,0},	// Rec
+	{MODE_KEYBOARD,0x05,0x03,0x82,0x20,0x10,0x19,0xe6,0,0},	// <<
+	{MODE_KEYBOARD,0x09,0x03,0x82,0x20,0x10,0x3a,0xc5,0,0},	// >>
+	{MODE_KEYBOARD,0x6a,0x03,0x82,0x20,0x10,0x1b,0xe4,0,0},	// <
+	{MODE_KEYBOARD,0x6d,0x03,0x82,0x20,0x10,0x1c,0xe3,0,0},	// >
+	{MODE_KEYBOARD,0x6c,0x02,0x82,0x20,0x10,0x1d,0xe2,0,0},	// 1
+	{MODE_KEYBOARD,0x6d,0x02,0x82,0x20,0x10,0x1e,0xe1,0,0},	// 2
+	{MODE_KEYBOARD,0x6e,0x02,0x82,0x20,0x10,0x1f,0xe0,0,0},	// 3
+	{MODE_KEYBOARD,0x6f,0x02,0x82,0x20,0x10,0x21,0xde,0,0},	// 4
+	{MODE_KEYBOARD,0x70,0x02,0x82,0x20,0x10,0x42,0xbd,0,0},	// 5
+	{MODE_KEYBOARD,0x71,0x02,0x82,0x20,0x10,0x43,0xbc,0,0},	// 6
+	{MODE_KEYBOARD,0x72,0x02,0x82,0x20,0x10,0x45,0xba,0,0},	// 7
+	{MODE_KEYBOARD,0x72,0x02,0x82,0x20,0x10,0x26,0xd9,0,0},	// 8
+	{MODE_KEYBOARD,0x68,0x01,0x82,0x20,0x10,0x47,0xb8,0,0},	// 9
+	{MODE_KEYBOARD,0x69,0x01,0x82,0x20,0x10,0x4a,0xb5,0,0},	// 0
+	{MODE_KEYBOARD,0x6b,0x02,0x82,0x20,0x10,0x49,0xb6,0,0},	// *
+	{MODE_KEYBOARD,0x6a,0x01,0x82,0x20,0x10,0x4b,0xb4,0,0},	// #
+	{MODE_KEYBOARD,0x60,0x01,0x82,0x20,0x10,0x40,0xbf,0,0},	// CH+
+	{MODE_KEYBOARD,0x5a,0x01,0x82,0x20,0x10,0x44,0xbb,0,0},	// CH-
+	{MODE_KEYBOARD,0x43,0x00,0x82,0x20,0x10,0x48,0xb7,0,0},	// VOl+
+	{MODE_KEYBOARD,0x42,0x00,0x82,0x20,0x10,0x4c,0xb3,0,0},	// VOl-
+	{MODE_KEYBOARD,0x6e,0x03,0x82,0x20,0x10,0x4d,0xb2,0,0},	// •ú‘—Ø‘Ö
+	{MODE_KEYBOARD,0x00,0x00,0x82,0x20,0x10,0x4e,0xb1,0,0},	// ƒNƒŠƒA
+	{MODE_KEYBOARD,0x6f,0x03,0x82,0x20,0x10,0x2f,0xd0,0,0},	// “ü—Í
+	{MODE_KEYBOARD,0x00,0x00,0x82,0x20,0x10,0x4f,0xb0,0,0},	// data
+	{MODE_KEYBOARD,0x70,0x03,0x82,0x20,0x10,0x50,0xaf,0,0},	// Â
+	{MODE_KEYBOARD,0x71,0x03,0x82,0x20,0x10,0x51,0xae,0,0},	// Ô
+	{MODE_KEYBOARD,0x72,0x03,0x82,0x20,0x10,0x52,0xad,0,0},	// —Î
+	{MODE_KEYBOARD,0x73,0x03,0x82,0x20,0x10,0x22,0xdd,0,0},	// ‰©
 };
 /** EOF main.c *************************************************/
 #endif
