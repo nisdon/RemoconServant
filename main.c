@@ -88,7 +88,6 @@ void UserInit(void);
 void YourHighPriorityISRCode();
 void YourLowPriorityISRCode();
 int RemoconReceiveData(void);
-int RemoconOutData(void);
 
 /** DECLARATIONS ***************************************************/
 #define MODE_MOUSE		0
@@ -159,28 +158,13 @@ int RemoconOutData(void);
 #define READSTATUS_DATA_WAIT			0x01	/* 受信状態　データ待ち */
 #define READSTATUS_READ_END				0x02	/* 受信状態　データ終了 */
 #define READSTATUS_NEXT_DATA_WAIT		0x04	/* 受信状態　次データ待ち */
-#define READSTATUS_2ND_READERCODE_WAIT	0x08	/* 受信状態　2ndリーダコード待ち */
-#define READSTATUS_2ND_DATA_WAIT		0x10	/* 受信状態　2ndデータ待ち */
 #define READBUFFER_READER_SIZE			1		/* 受信バッファサイズ　リーダコード(1byte) */
 #define READBUFFER_DATA_SIZE			6		/* 受信バッファサイズ　データ(6byte) */
 #define READBUFFER_SIZE					READBUFFER_READER_SIZE+READBUFFER_DATA_SIZE	/* 受信バッファサイズ　リーダコード(1byte) + データ(6byte) */
 #define READBUFFER_FORMAT_SIZE_EX		1		/* 拡張 受信バッファサイズ　フォーマットコード(1byte) */
 #define READBUFFER_DATA_SIZE_EX			2		/* 拡張 受信バッファサイズ　データサイズ（単位bit）(1byte) */
 #define READBUFFER_DATA_AREA_SIZE_EX	32		/* 拡張 受信バッファサイズ　データエリアサイズ(32byte) */
-#define READBUFFER_SIZE_EX				READBUFFER_FORMAT_SIZE_EX+READBUFFER_DATA_SIZE_EX+READBUFFER_DATA_AREA_SIZE_EX	/* 拡張 受信バッファサイズ　フォーマットコード(1byte) + データサイズ(1byte) + データエリア(32byte) */
-#define OUTSTATUS_OUTPUT_WAIT			0x00	/* 出力状態　出力待ち */
-#define OUTSTATUS_READER_CODE			0x01	/* 出力状態　リーダコード */
-#define OUTSTATUS_DATA_CODE				0x02	/* 出力状態　データコード */
-#define OUTSTATUS_END					0x04	/* 出力状態　終了 */
-#define OUTSTATUS_2ND_READER_CODE		0x08	/* 出力状態　2ndリーダコード */
-#define OUTSTATUS_2ND_DATA_CODE			0x10	/* 出力状態　2ndデータコード */
-#define OUTBUFFER_READER_SIZE			1		/* 出力バッファサイズ　リーダコード(1byte) */
-#define OUTBUFFER_DATA_SIZE				6		/* 出力バッファサイズ　データ(6byte) */
-#define OUTBUFFER_SIZE					OUTBUFFER_READER_SIZE+OUTBUFFER_DATA_SIZE	/* 出力バッファサイズ　リーダコード(1byte) + データ(6byte) */
-#define OUTBUFFER_FORMAT_SIZE_EX		1		/* 拡張 出力バッファサイズ　フォーマットコード(1byte) */
-#define OUTBUFFER_DATA_SIZE_EX			2		/* 拡張 出力バッファサイズ　データサイズ（単位bit）(1byte) */
-#define OUTBUFFER_DATA_AREA_SIZE_EX		32		/* 拡張 出力バッファサイズ　データエリアサイズ(32byte) */
-#define OUTBUFFER_SIZE_EX				OUTBUFFER_FORMAT_SIZE_EX+OUTBUFFER_DATA_SIZE_EX+OUTBUFFER_DATA_AREA_SIZE_EX	/* 拡張 出力バッファサイズ　リーダコード(1byte) + データ(32byte) */
+#define READBUFFER_SIZE_EX				READBUFFER_FORMAT_SIZE_EX+READBUFFER_DATA_SIZE_EX+READBUFFER_DATA_AREA_SIZE_EX	/* 拡張 受信バッファサイズ　ダコード(1byte) + データ(32byte) */
 #define FORMATCODE_UNKNOWN				0		/* 赤外線通信フォーマット 不明 */
 #define FORMATCODE_KADEN				1		/* 赤外線通信フォーマット 家電協 */
 #define FORMATCODE_NEC					2		/* 赤外線通信フォーマット NEC */
@@ -349,33 +333,14 @@ unsigned char uc_read_status = READSTATUS_READERCODE_WAIT;
 unsigned int ui_off_count = 0;
 unsigned int ui_on_count = 0;
 unsigned char uc_tick_base = 0;
-unsigned char uc_format_type = FORMATCODE_UNKNOWN;
-unsigned char uc_receive_wait_mode = RECEIVE_WAIT_MODE_NONE;/* PC側が赤外線データ受信待ちのとき1 */
+unsigned char uc_format_type = FORMATCODE_NEC;
 unsigned int ui_next_data_wait_cnt = 0;						/* 次のデータまでのOFFの継続時間カウンタ */
 
 unsigned char uc_now_signal = 0;
 unsigned char uc_pre_signal = 0;
 
 // 赤外線リモコンデータ送信用変数
-unsigned int ui_out_pos = 0;
-unsigned char uc_out_status = OUTSTATUS_OUTPUT_WAIT;
-unsigned char uc_out_buff[OUTBUFFER_SIZE_EX];
-unsigned int ui_out_on_time = 0;
-unsigned int ui_out_off_time = 0;
-unsigned char uc_out_data_len = 0;
-unsigned char uc_out_data0_on = 0;
-unsigned char uc_out_data0_off = 0;
-unsigned char uc_out_data1_on = 0;
-unsigned char uc_out_data1_off = 0;
-unsigned char uc_send_bit_size = 0;
-unsigned char uc_send_bit_size_2nd_data = 0;
-
 unsigned char uc_first_data_bit = 0;
-
-unsigned char uc_read_code_type = CODE_TYPE_STANDARD;
-unsigned char uc_out_code_type = CODE_TYPE_STANDARD;
-
-unsigned int ui_PWM50_Set_Val = PWM_50;
 
 // デバッグ
 unsigned char debug_ary[4] = {0};
@@ -395,6 +360,7 @@ unsigned char mouse_input_out_flag = 0;
 unsigned char hid_report_out_flag = 0;
 unsigned char ReceivedDataBuffer[RX_BUFFER_SIZE];
 unsigned char ToSendDataBuffer[TX_BUFFER_SIZE];
+const unsigned char rom IRDATA[][10];
 
 #pragma udata
 
@@ -505,15 +471,8 @@ unsigned char ToSendDataBuffer[TX_BUFFER_SIZE];
 			INTCONbits.TMR0IF = 0;
 			WriteTimer0(WRITE_TIMER0_COUNT);
 
-			// データ出力中の時は受信しない
-			if( uc_out_status == OUTSTATUS_OUTPUT_WAIT )
-			{
-				/* 赤外線リモコンのデータ受信 */
-				RemoconReceiveData();
-			}	
-			
-			/* 赤外線リモコンのデータ出力 */
-			RemoconOutData();
+			/* 赤外線リモコンのデータ受信 */
+			RemoconReceiveData();
 		}
 
 	}	//This return will be a "retfie", since this is in a #pragma interruptlow section 
@@ -695,10 +654,6 @@ void UserInit(void)
 
     //initialize the variable holding the handle for the last
 	
-    for(fi = 0; fi < OUTBUFFER_SIZE_EX; fi++ )
-    {
-	    uc_out_buff[fi] = 0;
-	}
 	for(fi = 0; fi < READBUFFER_SIZE_EX; fi++)
 	{
 		uc_process_read_data[fi] = 0;
@@ -751,7 +706,8 @@ void UserInit(void)
 	// EEPROMの赤外線データの0バイト目を格納する
 	for( fi = 0, fj = EEPROM_DATA_DATACODE; fi < EEPROM_DATA_NUM; fi++, fj+=EEPROM_DATA_SIZE )
 	{
-		eeprom_check_data[fi] = ReadEEPROM( fi * EEPROM_DATA_SIZE + EEPROM_DATA_DATACODE);
+//		eeprom_check_data[fi] = ReadEEPROM( fi * EEPROM_DATA_SIZE + EEPROM_DATA_DATACODE);
+		eeprom_check_data[fi] = IRDATA[ fi ][ EEPROM_DATA_DATACODE];
 	}
 }//end UserInit
 
@@ -793,39 +749,23 @@ void ProcessIO(void)
 	/* 赤外線コード読み込み済み */
 	if( uc_fix_read_buff[0] != FORMATCODE_UNKNOWN )
 	{
-		/* PC側赤外線コード受信待ち */
-		if( uc_receive_wait_mode == RECEIVE_WAIT_MODE_WAIT )
+		send_read_data_flag = 0;
+		process_read_data_flag = 1;
+		for( fi = 0; fi < READBUFFER_SIZE; fi++ )
 		{
-			send_read_data_flag = 1;
-			for( fi = 0; fi < READBUFFER_SIZE_EX; fi++ )
-			{
-				uc_process_read_data[fi] = uc_fix_read_buff[fi];
-				uc_fix_read_buff[fi] = 0;
-			}
+			uc_process_read_data[fi] = uc_fix_read_buff[fi];
 		}
-		else
+		for( fi = 0; fi < READBUFFER_SIZE_EX; fi++ )
 		{
-			send_read_data_flag = 0;
-			process_read_data_flag = 1;
-			for( fi = 0; fi < READBUFFER_SIZE; fi++ )
-			{
-				uc_process_read_data[fi] = uc_fix_read_buff[fi];
-			}
-			for( fi = 0; fi < READBUFFER_SIZE_EX; fi++ )
-			{
-				uc_fix_read_buff[fi] = 0;
-			}
+			uc_fix_read_buff[fi] = 0;
 		}
 	}
 	else
-	{	/* PC側赤外線コード受信待ちでないときはバッファをクリア */
-		if( uc_receive_wait_mode != RECEIVE_WAIT_MODE_WAIT )
+	{
+		send_read_data_flag = 0;
+		for( fi = 0; fi < (READBUFFER_SIZE_EX - READBUFFER_DATA_AREA_SIZE_EX); fi++ )
 		{
-			send_read_data_flag = 0;
-			for( fi = 0; fi < (READBUFFER_SIZE_EX - READBUFFER_DATA_AREA_SIZE_EX); fi++ )
-			{
-				uc_process_read_data[fi] = 0;
-			}
+			uc_process_read_data[fi] = 0;
 		}
 	}	
 
@@ -844,7 +784,8 @@ void ProcessIO(void)
 				code_match_flag++;	//一致
 				eeprom_1data[EEPROM_DATA_DATACODE] = eeprom_check_data[fi];
 
-				uc_1data = ReadEEPROM(fi * EEPROM_DATA_SIZE + EEPROM_DATA_READERCODE);
+//				uc_1data = ReadEEPROM(fi * EEPROM_DATA_SIZE + EEPROM_DATA_READERCODE);
+				uc_1data = IRDATA[fi][EEPROM_DATA_READERCODE];
 				/* リーダコード比較 */
 				if( uc_1data == uc_process_read_data[0] )
 				{	/*リーダコード一致*/
@@ -854,7 +795,8 @@ void ProcessIO(void)
 					/* 0バイト目が一致していたので1バイト以降を読み出し比較する */
 					for( fj = 1; fj < READBUFFER_DATA_SIZE; fj++ )
 					{
-						uc_1data = ReadEEPROM((unsigned char)fi * (unsigned char)EEPROM_DATA_SIZE + (unsigned char)EEPROM_DATA_DATACODE + (unsigned char)fj );
+//						uc_1data = ReadEEPROM((unsigned char)fi * (unsigned char)EEPROM_DATA_SIZE + (unsigned char)EEPROM_DATA_DATACODE + (unsigned char)fj );
+						uc_1data = IRDATA[fi][(unsigned char)EEPROM_DATA_DATACODE + (unsigned char)fj];
 						if(uc_1data == uc_process_read_data[1+fj])
 						{
 							code_match_flag++;	//一致
@@ -865,9 +807,12 @@ void ProcessIO(void)
 					// 赤外線コード全て一致
 					if(code_match_flag == (READBUFFER_READER_SIZE + READBUFFER_DATA_SIZE))
 					{
-						eeprom_1data[EEPROM_DATA_MODE] = ReadEEPROM(fi * EEPROM_DATA_SIZE + EEPROM_DATA_MODE);
-						eeprom_1data[EEPROM_DATA_VALUE] = ReadEEPROM(fi * EEPROM_DATA_SIZE + EEPROM_DATA_VALUE);
-						eeprom_1data[EEPROM_DATA_MODIFIER] = ReadEEPROM(fi * EEPROM_DATA_SIZE + EEPROM_DATA_MODIFIER);
+//						eeprom_1data[EEPROM_DATA_MODE] = ReadEEPROM(fi * EEPROM_DATA_SIZE + EEPROM_DATA_MODE);
+//						eeprom_1data[EEPROM_DATA_VALUE] = ReadEEPROM(fi * EEPROM_DATA_SIZE + EEPROM_DATA_VALUE);
+//						eeprom_1data[EEPROM_DATA_MODIFIER] = ReadEEPROM(fi * EEPROM_DATA_SIZE + EEPROM_DATA_MODIFIER);
+						eeprom_1data[EEPROM_DATA_MODE] = IRDATA[fi][EEPROM_DATA_MODE];
+						eeprom_1data[EEPROM_DATA_VALUE] = IRDATA[fi][EEPROM_DATA_VALUE];
+						eeprom_1data[EEPROM_DATA_MODIFIER] = IRDATA[fi][EEPROM_DATA_MODIFIER];
 						/* 受信した赤外線コードが一致したので設定されているコードを送信する */
 
 						switch(eeprom_1data[EEPROM_DATA_MODE])
@@ -980,257 +925,6 @@ void ProcessIO(void)
         	volume_input_out_flag--;
  		}      	
     }
-//---------------------------------------------------------------------
-//	USBデータ通信部
-    if(!HIDRxHandleBusy(USBOutHandle))				//Check if data was received from the host.
-    {
-	    // 送信バッファクリア
-	    for( fi = 0; fi < TX_BUFFER_SIZE; fi++)
-	    {
-		    ToSendDataBuffer[fi] = 0;
-		}
-		
-        switch(ReceivedDataBuffer[0])
-        {
-            case 0x56: // V=0x56 Get Firmware version
-                ToSendDataBuffer[0] = 0x56;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Pushbutton State command.
-				tmp = strlen(c_version);
-				if( 0 < tmp && tmp <= (64-2) )
-				{
-					for( fi = 0; fi < tmp; fi++ )
-					{
-						ToSendDataBuffer[fi+1] = c_version[fi];
-					}
-					// 最後にNULL文字を設定
-					ToSendDataBuffer[fi+1] = 0x00;
-				}
-				else
-				{
-					//バージョン文字列異常
-					ToSendDataBuffer[1] = 0x00;
-				}				
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-            case 0x80:  // EEPROMにデータを設定 [0x80,先頭アドレス,サイズ,data1, ... ,data61]
-            	/* パラメータチェック 先頭アドレス(0-199)+データサイズ(1-61)<=200 サイズ=1-61 */
-            	if((ReceivedDataBuffer[1]+ReceivedDataBuffer[2]) <= EEPROM_DATA_TOTAL_SIZE 
-            		&& 1 <= ReceivedDataBuffer[2] && ReceivedDataBuffer[2] <= 61)
-            	{
-	            	for( fi = 0; fi < ReceivedDataBuffer[2]; fi++)
-	            	{
-		            	WriteEEPROM(ReceivedDataBuffer[1]+fi,ReceivedDataBuffer[3+fi]);
-		            }
-		            // OKアンサ
-		            ToSendDataBuffer[1] = 0x00;
-	           	}
-	           	else
-	           	{
-		           	// NGアンサ
-		           	ToSendDataBuffer[1] = 0xFF;
-		        }
-                ToSendDataBuffer[0] = 0x80;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Pushbutton State command.
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-            case 0x81:  // EEPROMにデータを設定 [0x81,データNo,サイズ,data1, ... ,data10]
-            	/* パラメータチェック データNO=1-20 サイズ=10 */
-            	if( 1 <= ReceivedDataBuffer[1] && ReceivedDataBuffer[1] <= EEPROM_DATA_NUM && ReceivedDataBuffer[2] == EEPROM_DATA_SIZE)
-            	{
-	            	for( fi = 0; fi < ReceivedDataBuffer[2]; fi++)
-	            	{
-		            	WriteEEPROM((ReceivedDataBuffer[1]-1)*EEPROM_DATA_SIZE+fi,ReceivedDataBuffer[3+fi]);
-		            }
-		            // OKアンサ
-		            ToSendDataBuffer[1] = 0x00;
-		            
-		        	// 0バイト目を読み込んでいるバッファを更新
-					eeprom_check_data[ReceivedDataBuffer[1]-1] = ReceivedDataBuffer[7];
-	           	}
-	           	else
-	           	{
-		           	// NGアンサ
-		           	ToSendDataBuffer[1] = 0xFF;
-		        }
-                ToSendDataBuffer[0] = 0x81;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Pushbutton State command.
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-            case 0x82:  // EEPROMからデータ読み出し [0x82,先頭アドレス,サイズ] -> アンサ[0x82,サイズ,data1, ... , data61]
-				ToSendDataBuffer[0] = 0x82;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Pushbutton State command.
-            	/* パラメータチェック 先頭アドレス(0-199)+データサイズ(1-61)<=200 サイズ=1-61 */
-            	if((ReceivedDataBuffer[1]+ReceivedDataBuffer[2]) <= EEPROM_DATA_TOTAL_SIZE 
-            		&& 1 <= ReceivedDataBuffer[2] && ReceivedDataBuffer[2] <= 61)
-            	{
-	            	ToSendDataBuffer[1] = ReceivedDataBuffer[2];
-	            	for( fi = 0; fi < ReceivedDataBuffer[2]; fi++)
-	            	{
-		            	ToSendDataBuffer[2+fi] = ReadEEPROM(ReceivedDataBuffer[1]+fi);
-		            }
-	            }
-	           	else
-	           	{
-		           	// NGアンサ
-		           	ToSendDataBuffer[1] = 0xFF;
-		        }
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-            case 0x83:  // EEPROMからデータ読み出し [0x83,データNo,サイズ] -> アンサ[0x83,サイズ,data1, ... , data10]
-				ToSendDataBuffer[0] = 0x83;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Pushbutton State command.
-            	/* パラメータチェック データNO=1-20 サイズ=10 */
-            	if( 1 <= ReceivedDataBuffer[1] && ReceivedDataBuffer[1] <= EEPROM_DATA_NUM && ReceivedDataBuffer[2] == EEPROM_DATA_SIZE)
-            	{
-	            	ToSendDataBuffer[1] = ReceivedDataBuffer[2];
-	            	for( fi = 0; fi < ReceivedDataBuffer[2]; fi++)
-	            	{
-		            	ToSendDataBuffer[2+fi] = ReadEEPROM((ReceivedDataBuffer[1]-1)*EEPROM_DATA_SIZE+fi);
-		            }
-	           	}
-	           	else
-	           	{
-		           	// NGアンサ
-		           	ToSendDataBuffer[1] = 0xFF;
-		        }
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-#if 1	//DEBUG
-            case 0x40:
-                ToSendDataBuffer[0] = 0x40;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Pushbutton State command.
-				ToSendDataBuffer[1] = (unsigned char)(ui_off_count & 0xff);
-				ToSendDataBuffer[2] = (unsigned char)(ui_on_count & 0xff);
-				ToSendDataBuffer[3] = debug_ary[0];
-				ToSendDataBuffer[4] = debug_ary[1];
-				ToSendDataBuffer[5] = debug_ary[2];
-				ToSendDataBuffer[6] = debug_ary[3];
-
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-            case 0x41:
-                ToSendDataBuffer[0] = 0x41;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Remocon Data command.
-
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-#endif	//DEBUG
-            case 0x50:	/* 赤外線受信データを送信 */
-                ToSendDataBuffer[0] = 0x50;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Remocon Data command.
-
-				if(send_read_data_flag == 1)
-				{
-					for(fi = 0; fi < READBUFFER_SIZE; fi++)
-					{
-						ToSendDataBuffer[fi+1] = uc_process_read_data[fi];
-					}
-				}
-				else
-				{
-					for(fi = 0; fi < READBUFFER_SIZE; fi++)
-					{
-						ToSendDataBuffer[fi+1] = 0x00;
-					}
-				}
-
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-            case 0x51:	/* 赤外線受信待ちモード設定 */
-	            uc_read_code_type = CODE_TYPE_STANDARD;
-            	if( RECEIVE_WAIT_MODE_WAIT == ReceivedDataBuffer[1] )
-            	{	/* 受信待ちモード設定 */
-	            	uc_receive_wait_mode = RECEIVE_WAIT_MODE_WAIT;
-	            }
-	            else
-	            {	/* 受信待ちモード解除 */
-	            	uc_receive_wait_mode = RECEIVE_WAIT_MODE_NONE;
-	         	}
-                ToSendDataBuffer[0] = 0x51;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Remocon Data command.
-
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-            case 0x52:	/* 赤外線受信データを送信 拡張版 */
-                ToSendDataBuffer[0] = 0x52;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Remocon Data command.
-
-				if(send_read_data_flag == 1)
-				{
-					for(fi = 0; fi < READBUFFER_SIZE_EX; fi++)
-					{
-						ToSendDataBuffer[fi+1] = uc_process_read_data[fi];
-					}
-				}
-				else
-				{
-					for(fi = 0; fi < READBUFFER_SIZE_EX; fi++)
-					{
-						ToSendDataBuffer[fi+1] = 0x00;
-					}
-				}
-
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-            case 0x53:	/* 赤外線受信待ちモード設定 拡張版 */
-            	if( RECEIVE_WAIT_MODE_WAIT == ReceivedDataBuffer[1] )
-            	{	/* 受信待ちモード設定 */
-	            	uc_read_code_type = CODE_TYPE_EXTENSION;
-	            	uc_receive_wait_mode = RECEIVE_WAIT_MODE_WAIT;
-	            }
-	            else
-	            {	/* 受信待ちモード解除 */
-	            	uc_receive_wait_mode = RECEIVE_WAIT_MODE_NONE;
-	            	uc_read_code_type = CODE_TYPE_STANDARD;
-	         	}
-                ToSendDataBuffer[0] = 0x53;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Remocon Data command.
-
-                if(!HIDTxHandleBusy(USBInHandle))
-                {
-                    USBInHandle = HIDTxPacket(HID_EP4,(BYTE*)&ToSendDataBuffer[0],64);
-                }
-                break;
-                
-            case 0x60:	/* 赤外線出力データを受信する */
-                ToSendDataBuffer[0] = 0x60;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Remocon Data command.
-				
-				uc_out_code_type = CODE_TYPE_STANDARD;
-				for(fi = 0; fi < OUTBUFFER_SIZE; fi++){
-					uc_out_buff[fi] = ReceivedDataBuffer[fi+1];
-				}
-                break;
-            case 0x61:	/* 赤外線出力データを受信する 拡張版 */
-                ToSendDataBuffer[0] = 0x61;				//Echo back to the host PC the command we are fulfilling in the first byte.  In this case, the Get Remocon Data command.
-				
-				uc_out_code_type = CODE_TYPE_EXTENSION;
-				for(fi = 0; fi < OUTBUFFER_SIZE_EX; fi++){
-					uc_out_buff[fi] = ReceivedDataBuffer[fi+1];
-				}
-                break;
-        }
-         //Re-arm the OUT endpoint for the next packet
-        USBOutHandle = HIDRxPacket(HID_EP4,(BYTE*)&ReceivedDataBuffer,64);
-    }
 }
 
 
@@ -1302,41 +996,6 @@ void USBCBSuspend(void)
     #endif
 }
 
-
-/******************************************************************************
- * Function:        void _USB1Interrupt(void)
- *
- * PreCondition:    None
- *
- * Input:           None
- *
- * Output:          None
- *
- * Side Effects:    None
- *
- * Overview:        This function is called when the USB interrupt bit is set
- *					In this example the interrupt is only used when the device
- *					goes to sleep when it receives a USB suspend command
- *
- * Note:            None
- *****************************************************************************/
-#if 0
-void __attribute__ ((interrupt)) _USB1Interrupt(void)
-{
-    #if !defined(self_powered)
-        if(U1OTGIRbits.ACTVIF)
-        {       
-            IEC5bits.USB1IE = 0;
-            U1OTGIEbits.ACTVIE = 0;
-            IFS5bits.USB1IF = 0;
-        
-            //USBClearInterruptFlag(USBActivityIFReg,USBActivityIFBitNum);
-            USBClearInterruptFlag(USBIdleIFReg,USBIdleIFBitNum);
-            //USBSuspendControl = 0;
-        }
-    #endif
-}
-#endif
 
 /******************************************************************************
  * Function:        void USBCBWakeFromSuspend(void)
@@ -1663,420 +1322,6 @@ BOOL USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, WORD size)
 }
 
 /*******************************************************************
- * Function:        int RemoconOutData(
- *                        void )
- *
- * PreCondition:    None
- *
- * Input:           None
- *
- * Output:          int - A processing result is returned. 0 is normal.
- *
- * Side Effects:    None
- *
- * Overview:        この関数は、赤外線リモコンのデータを出力します。    
- *                  出力バッファ[0]のフォーマットタイプ従い、[1]以降のデータを出力します。 
- *                  0 is returned at the time of normal processing.
- *
- * Note:            None
- *******************************************************************/
-int RemoconOutData(void)
-{
-	int ret_code = 0;
-	int fi = 0;
-	unsigned int byte_pos = 0;
-	unsigned int bit_pos = 0;
-	unsigned char send_bit = 0;
-	unsigned char format_type;
-	unsigned char out_buffer_offset;
-	
-	/* 出力状態でない */
-	if( 0 >= ui_out_on_time && 0 >= ui_out_off_time )
-	{
-		/* 出力待ち */
-		if( uc_out_status == OUTSTATUS_OUTPUT_WAIT )
-		{
-
-			/* 初期化 */
-			ui_out_pos = 0;	/* 出力位置 */
-			
-			// フォーマットタイプセット
-			if(uc_out_code_type == CODE_TYPE_EXTENSION)
-			{	// 拡張型は 0 バイト目
-				format_type = uc_out_buff[0];
-			}
-			else
-			{	// 標準型は 0バイト目の下位4bit
-				format_type = (uc_out_buff[0] & 0x0F);
-			}
-			
-			/* 出力バッファに出力データがある？ */
-			if( format_type != FORMATCODE_UNKNOWN )
-			{
-				/* 次の状態へ */
-				uc_out_status = OUTSTATUS_DATA_CODE;
-				/* データサイズ設定(bit) */
-				if(uc_out_code_type == CODE_TYPE_EXTENSION)
-				{	// 拡張型は 1バイト目と2バイト目
-					uc_send_bit_size = uc_out_buff[1];
-					uc_send_bit_size_2nd_data = uc_out_buff[2];
-				}
-				else
-				{	// 標準型は 0バイト目の上位4bit	
-					/* uc_out_buff[0]の上位4ビットに出力データ長/4の値が入っている */
-					/* (uc_out_buff[0] >> 4) * 4 = uc_out_buff[0] >> 2 */
-					uc_send_bit_size = uc_out_buff[0];
-					uc_send_bit_size = ((uc_send_bit_size&0xF0)>>2);
-					uc_send_bit_size_2nd_data = 0;
-				}
-				
-				// PWM Duty Set
-				ClosePWM1();
-				if(format_type == FORMATCODE_DAIKIN && uc_send_bit_size == 0x38)
-				{	// 33kHz
-					ui_PWM50_Set_Val = PWM_50_33k;
-					OpenPWM1(PWM_PERIOD_33k);
-				}
-				else
-				{	// 38kHz
-					ui_PWM50_Set_Val = PWM_50;
-					OpenPWM1(PWM_PERIOD);
-				}
-					
-				
-				/* ONとOFF時間をセット*/
-				/* 家電協フォーマット */
-				if( format_type == FORMATCODE_KADEN )
-				{
-					ui_out_on_time = READERCODE_ON_KADEN;
-					ui_out_off_time = READERCODE_OFF_KADEN;
-					
-					uc_out_data0_on = DATA0_ON_KADEN;
-					uc_out_data0_off = DATA0_OFF_KADEN;
-					uc_out_data1_on = DATA1_ON_KADEN;
-					uc_out_data1_off = DATA1_OFF_KADEN;
-				}
-				/* NECフォーマット */
-				else if( format_type == FORMATCODE_NEC )
-				{
-					ui_out_on_time = READERCODE_ON_NEC;
-					ui_out_off_time = READERCODE_OFF_NEC;
-					
-					uc_out_data0_on = DATA0_ON_NEC;
-					uc_out_data0_off = DATA0_OFF_NEC;
-					uc_out_data1_on = DATA1_ON_NEC;
-					uc_out_data1_off = DATA1_OFF_NEC;
-				}
-				/* SONYフォーマット */
-				else if( format_type == FORMATCODE_SONY )
-				{
-					ui_out_on_time = READERCODE_ON_SONY;
-					ui_out_off_time = READERCODE_OFF_SONY;
-					
-					uc_out_data0_on = DATA0_ON_SONY;
-					uc_out_data0_off = DATA0_OFF_SONY;
-					uc_out_data1_on = DATA1_ON_SONY;
-					uc_out_data1_off = DATA1_OFF_SONY;
-				}
-				/* MITSUBISHIフォーマット */
-				else if( format_type == FORMATCODE_MITSU )
-				{
-					/* リーダコードなし */
-					ui_out_on_time = 0;
-					ui_out_off_time = 0;
-					
-					uc_out_data0_on = DATA0_ON_M;
-					uc_out_data0_off = DATA0_OFF_M;
-					uc_out_data1_on = DATA1_ON_M;
-					uc_out_data1_off = DATA1_OFF_M;
-				}
-				/* DAIKINフォーマット */
-				else if( format_type == FORMATCODE_DAIKIN )
-				{
-					ui_out_on_time = READERCODE_ON_DAI;
-					ui_out_off_time = READERCODE_OFF_DAI;
-					
-					uc_out_data0_on = DATA0_ON_DAI;
-					uc_out_data0_off = DATA0_OFF_DAI;
-					uc_out_data1_on = DATA1_ON_DAI;
-					uc_out_data1_off = DATA1_OFF_DAI;
-				}
-				/* DAIKIN2フォーマット */
-				else if( format_type == FORMATCODE_DAIKIN2 )
-				{
-					ui_out_on_time = READERCODE_ON_DAI2;
-					ui_out_off_time = READERCODE_OFF_DAI2;
-					
-					uc_out_data0_on = DATA0_ON_DAI;
-					uc_out_data0_off = DATA0_OFF_DAI;
-					uc_out_data1_on = DATA1_ON_DAI;
-					uc_out_data1_off = DATA1_OFF_DAI;
-				}
-				/* フォーマット不明 */
-				else
-				{
-					/* 出力バッファクリア */
-					for( fi = 0; fi < OUTBUFFER_SIZE_EX; fi++ )
-					{
-						uc_out_buff[fi] = 0;
-					}
-					uc_out_status = OUTSTATUS_OUTPUT_WAIT;
-					uc_send_bit_size = 0;
-					uc_send_bit_size_2nd_data = 0;
-					format_type = 0;
-				}
-			}
-		}
-		else if( uc_out_status == OUTSTATUS_DATA_CODE )
-		{
-			// フォーマットタイプセット
-			if(uc_out_code_type == CODE_TYPE_EXTENSION)
-			{	// 拡張型は 0 バイト目
-				format_type = uc_out_buff[0];
-				out_buffer_offset = OUTBUFFER_SIZE_EX - OUTBUFFER_DATA_AREA_SIZE_EX;
-			}
-			else
-			{	// 標準型は 0バイト目の下位4bit
-				format_type = (uc_out_buff[0] & 0x0F);
-				out_buffer_offset = OUTBUFFER_SIZE - OUTBUFFER_DATA_SIZE;
-			}
-
-			byte_pos = ui_out_pos / 8;
-			bit_pos = ui_out_pos % 8;
-			
-			if ( ( ui_out_pos == (unsigned int)uc_send_bit_size && uc_send_bit_size_2nd_data == 0 ) || ui_out_pos > DATA_MAX_BITS )
-			{	/* 終了コード */
-				send_bit = 0xF0;
-			}
-			else if(ui_out_pos == (unsigned int)uc_send_bit_size && uc_send_bit_size_2nd_data > 0)
-			{	/* 2ndデータあり */
-				send_bit = 3;
-			}	
-			else if( 0 <= (byte_pos+out_buffer_offset) && (byte_pos+out_buffer_offset) < OUTBUFFER_SIZE_EX )
-			{
-				send_bit = (uc_out_buff[byte_pos+out_buffer_offset] >> bit_pos ) & 0x01;
-			}
-			else
-			{	/* エラー */
-				send_bit = 0xFF;
-			}	
-
-			if( send_bit == 0 )
-			{	/* DATA0出力 */
-				ui_out_on_time = uc_out_data0_on;
-				ui_out_off_time = uc_out_data0_off;
-			}
-			else if ( send_bit == 1 )
-			{	/* DATA1出力 */
-				ui_out_on_time = uc_out_data1_on;
-				ui_out_off_time = uc_out_data1_off;
-			}
-			else if ( send_bit == 0xF0 )
-			{	/* 終了コード出力 */
-				ui_out_on_time = uc_out_data0_on;
-				ui_out_off_time = SENDCODE_END_CNT;
-			}
-			else if ( send_bit == 3 )
-			{	/* 次のデータまでの間隔を空ける */
-				ui_out_on_time = uc_out_data0_on;
-				ui_out_off_time = DATA_CODE_INTERVAL_SEND_CNT;
-				
-				// リーダコード送信状態へ
-				uc_out_status = OUTSTATUS_2ND_READER_CODE;
-			}
-			else if ( send_bit == 0xFF )
-			{	/* エラー */
-				ui_out_on_time = 0;
-				ui_out_off_time = 0;
-				uc_out_status = OUTSTATUS_OUTPUT_WAIT;
-			}
-			
-			/* SONYフォーマットはトレーラーコードなし */
-			if( format_type == FORMATCODE_SONY )
-			{
-				//最終データ送信時のOFFを長くする
-				if ( ui_out_pos == (unsigned int)(uc_send_bit_size - 1) )
-				{	/* 終了コード */
-					ui_out_off_time = SENDCODE_END_CNT;
-				}	
-			}
-				
-			if( send_bit >= 0xF0 )
-			{	/* 次の送信データなし */
-				/* 出力バッファクリア */
-				for( fi = 0; fi < OUTBUFFER_SIZE_EX; fi++ )
-				{
-					uc_out_buff[fi] = 0;
-				}
-				/* 出力待ち */
-				uc_out_status = OUTSTATUS_OUTPUT_WAIT;
-			}
-			else if(send_bit == 0 || send_bit == 1)
-			{
-				/* 出力データ位置をインクリメント */
-				ui_out_pos++;
-			}
-		}
-		else if( uc_out_status == OUTSTATUS_2ND_READER_CODE )
-		{	// 2nd Reader Code出力
-
-			uc_out_status = OUTSTATUS_2ND_DATA_CODE;
-			
-			// フォーマットタイプセット
-			if(uc_out_code_type == CODE_TYPE_EXTENSION)
-			{	// 拡張型は 0 バイト目
-				format_type = uc_out_buff[0];
-				out_buffer_offset = OUTBUFFER_SIZE_EX - OUTBUFFER_DATA_AREA_SIZE_EX;
-			}
-			else
-			{	// 標準型は 0バイト目の下位4bit
-				format_type = (uc_out_buff[0] & 0x0F);
-				out_buffer_offset = OUTBUFFER_SIZE - OUTBUFFER_DATA_SIZE;
-			}
-			
-			/* 家電協フォーマット */
-			if( format_type == FORMATCODE_KADEN )
-			{
-				ui_out_on_time = READERCODE_ON_KADEN;
-				ui_out_off_time = READERCODE_OFF_KADEN;
-			}
-			/* NECフォーマット */
-			else if( format_type == FORMATCODE_NEC )
-			{
-				ui_out_on_time = READERCODE_ON_NEC;
-				ui_out_off_time = READERCODE_OFF_NEC;
-			}
-#if 0
-			/* SONYフォーマット */
-			else if( format_type == FORMATCODE_SONY )
-			{
-				ui_out_on_time = READERCODE_ON_SONY;
-				ui_out_off_time = READERCODE_OFF_SONY;
-			}
-			/* MITSUBISHIフォーマット */
-			else if( format_type == FORMATCODE_MITSU )
-			{
-				/* リーダコードなし */
-				ui_out_on_time = 0;
-				ui_out_off_time = 0;
-			}
-#endif
-			/* DAIKINフォーマット */
-			else if( format_type == FORMATCODE_DAIKIN )
-			{
-				ui_out_on_time = READERCODE_ON_DAI;
-				ui_out_off_time = READERCODE_OFF_DAI;
-			}
-			/* DAIKIN2フォーマット */
-			else if( format_type == FORMATCODE_DAIKIN2 )
-			{
-				ui_out_on_time = READERCODE_ON_DAI2;
-				ui_out_off_time = READERCODE_OFF_DAI2;
-			}
-			/* フォーマット不明 */
-			else
-			{
-				/* 出力バッファクリア */
-				for( fi = 0; fi < OUTBUFFER_SIZE_EX; fi++ )
-				{
-					uc_out_buff[fi] = 0;
-				}
-				uc_out_status = OUTSTATUS_OUTPUT_WAIT;
-				uc_send_bit_size = 0;
-				uc_send_bit_size_2nd_data = 0;
-				format_type = 0;
-			}
-		}
-		else if( uc_out_status == OUTSTATUS_2ND_DATA_CODE )
-		{	// 2nd Data Code出力
-
-			// フォーマットタイプセット
-			if(uc_out_code_type == CODE_TYPE_EXTENSION)
-			{	// 拡張型は 0 バイト目
-				format_type = uc_out_buff[0];
-				out_buffer_offset = OUTBUFFER_SIZE_EX - OUTBUFFER_DATA_AREA_SIZE_EX;
-			}
-			else
-			{	// 標準型は 0バイト目の下位4bit
-				format_type = (uc_out_buff[0] & 0x0F);
-				out_buffer_offset = OUTBUFFER_SIZE - OUTBUFFER_DATA_SIZE;
-			}
-				
-			byte_pos = ui_out_pos / 8;
-			bit_pos = ui_out_pos % 8;
-			
-			if ( ui_out_pos == (unsigned int)(uc_send_bit_size + uc_send_bit_size_2nd_data) || ui_out_pos > DATA_MAX_BITS )
-			{	/* 終了コード */
-				send_bit = 0xF0;
-			}
-			else if( 0 <= (byte_pos+out_buffer_offset) && (byte_pos+out_buffer_offset) < OUTBUFFER_SIZE_EX )
-			{
-				send_bit = (uc_out_buff[byte_pos+out_buffer_offset] >> bit_pos ) & 0x01;
-			}
-			else
-			{	/* エラー */
-				send_bit = 0xFF;
-			}	
-
-			if( send_bit == 0 )
-			{	/* DATA0出力 */
-				ui_out_on_time = uc_out_data0_on;
-				ui_out_off_time = uc_out_data0_off;
-			}
-			else if ( send_bit == 1 )
-			{	/* DATA1出力 */
-				ui_out_on_time = uc_out_data1_on;
-				ui_out_off_time = uc_out_data1_off;
-			}
-			else if ( send_bit == 0xF0 )
-			{	/* 終了コード出力 */
-				ui_out_on_time = uc_out_data0_on;
-				ui_out_off_time = SENDCODE_END_CNT;
-			}
-			else if ( send_bit == 0xFF )
-			{	/* エラー */
-				ui_out_on_time = 0;
-				ui_out_off_time = 0;
-				uc_out_status = OUTSTATUS_OUTPUT_WAIT;
-			}
-
-			if( send_bit >= 0xF0 )
-			{	/* 次の送信データなし */
-				/* 出力バッファクリア */
-				for( fi = 0; fi < OUTBUFFER_SIZE_EX; fi++ )
-				{
-					uc_out_buff[fi] = 0;
-				}
-				/* 出力待ち */
-				uc_out_status = OUTSTATUS_OUTPUT_WAIT;
-			}
-			/* 出力データ位置をインクリメント */
-			ui_out_pos++;
-		}				
-	}
-
-	/* 出力ON時 */
-	if( 0 < ui_out_on_time )
-	{
-		SetDCPWM1(ui_PWM50_Set_Val);
-		//SetDCPWM1(PWM_50);
-		ui_out_on_time--;
-	}
-	/* 出力OFF時 */
-	else if( 0 < ui_out_off_time )
-	{
-		SetDCPWM1(PWM_OFF);
-		ui_out_off_time--;
-	}
-	else
-	{
-		SetDCPWM1(PWM_OFF);
-	}
-
-    return ret_code; 
-}
-
-/*******************************************************************
  * Function:        int RemoconReceiveData(
  *                        void )
  *
@@ -2141,123 +1386,21 @@ int RemoconReceiveData(void)
 			set_bit_data = 0xFF;
 
 			/* リーダコード受信 */
-			/* 判定 */
-			/* 家電協判定 */
-			if( uc_format_type == FORMATCODE_UNKNOWN )
-			{
-				if(READERCODE_MIN_KADEN <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= READERCODE_MAX_KADEN)
-				{
-					if( (ui_off_count*(READERCODE_ON_T_KADEN-1)) < ui_on_count && ui_on_count < (ui_off_count*(READERCODE_ON_T_KADEN+1)))
-					{
-						uc_format_type = FORMATCODE_KADEN;
-					}
-				}
-			}
-			/* NEC判定 */
-			if( uc_format_type == FORMATCODE_UNKNOWN )
-			{
-				if(READERCODE_MIN_NEC <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= READERCODE_MAX_NEC)
-				{
-					if( (ui_off_count*(READERCODE_ON_T_NEC-1)) < ui_on_count && ui_on_count < (ui_off_count*(READERCODE_ON_T_NEC+1)))
-					{
-						uc_format_type = FORMATCODE_NEC;
-					}
-				}	
-			}
-			/* SONY判定 */
-			if( uc_format_type == FORMATCODE_UNKNOWN )
-			{
-				if(READERCODE_MIN_SONY <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= READERCODE_MAX_SONY)
-				{
-					if( (ui_off_count*(READERCODE_ON_T_SONY-1)) < ui_on_count && ui_on_count < (ui_off_count*(READERCODE_ON_T_SONY+1)))
-					{
-						uc_format_type = FORMATCODE_SONY;
-					}
-				}
-			}
-			/* DAIKIN判定 */
-			if( uc_format_type == FORMATCODE_UNKNOWN )
-			{
-				if(READERCODE_MIN_DAI <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= READERCODE_MAX_DAI)
-				{
-					if( (ui_off_count*(READERCODE_ON_T_DAI-1)) < ui_on_count && ui_on_count < (ui_off_count*(READERCODE_ON_T_DAI+1)))
-					{
-						uc_format_type = FORMATCODE_DAIKIN;
-					}
-				}	
-			}
-			/* DAIKIN2判定 */
-			if( uc_format_type == FORMATCODE_UNKNOWN )
-			{
-				if(READERCODE_MIN_DAI2 <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= READERCODE_MAX_DAI2)
-				{
-					if( (ui_on_count*(READERCODE_OFF_T_DAI2-1)) < ui_off_count && ui_off_count < (ui_on_count*(READERCODE_OFF_T_DAI2+1)))
-					{
-						uc_format_type = FORMATCODE_DAIKIN2;
-					}
-				}
-			}
-			/* リーダコード無しのため最後に判定すること */
-			/* MITSUBISHI判定 リーダコードなしのため、いきなりデータ判定 */
-			if( uc_format_type == FORMATCODE_UNKNOWN )
-			{
-				if(DATACODE_MIN_M <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= DATACODE_MAX_M)
-				{
-					if( 2 < ui_on_count && ui_on_count < 6)
-					{
-						uc_format_type = FORMATCODE_MITSU;
-
-						if( ui_off_count >= DATACODE_DATA1_M )
-						{	/* DATA 1 */
-							set_bit_data = ON;
-						}
-						else
-						{	/*DATA 0*/
-							set_bit_data = OFF;
-						}
-					}
-				}
-			}
-		
 			/* カウンタリセット */
 			ui_on_count = 1;	/* 今回ONなので0ではなく1をセット */
 			ui_off_count = 0;
 
-			if( uc_format_type != FORMATCODE_UNKNOWN )
-			{	
-				for( fi = 0 ; fi < READBUFFER_SIZE_EX ; fi++ ){
-					uc_read_buff[fi] = 0;
-				}
-
-				/* リーダコードセット */
-				uc_read_buff[0] = uc_format_type;
-	
-				/* 受信状態インクリメント */
-				uc_read_status = READSTATUS_DATA_WAIT;
+			for( fi = 0 ; fi < READBUFFER_SIZE_EX ; fi++ ){
+				uc_read_buff[fi] = 0;
 			}
-			//リーダコードなしで、いきなりデータの場合
-			if( set_bit_data == ON || set_bit_data == OFF )
-			{
-				if( set_bit_data == ON )
-				{
-					uc_read_buff[1] = 0x01;
-				}
-				else if ( set_bit_data == OFF )
-				{
-					uc_read_buff[1] = 0x00;
-				}		
-				ui_data_pos = 1;
-			}	
+
+			/* リーダコードセット */
+			uc_read_buff[0] = uc_format_type;
+			/* 受信状態インクリメント */
+			uc_read_status = READSTATUS_DATA_WAIT;
 		}
 		/* データ受信待ち？ */
 		else if ( uc_read_status == READSTATUS_DATA_WAIT ){
-			
 			/* データコード受信 */
 			/*  */
 			set_bit_data = 0xFF;
@@ -2295,313 +1438,35 @@ int RemoconReceiveData(void)
 					}
 				}
 			}
-			/* SONY判定 */
-			else if( uc_format_type == FORMATCODE_SONY )
-			{
-				// SONYはトレーラーコードなしのため、終了コード時にもデータ判定する
-				if((DATACODE_MIN_SONY <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= DATACODE_MAX_SONY)
-					|| ( ui_on_count > 0 && ui_off_count > READCODE_END_CNT))
-				{
-					if( ui_on_count >= DATACODE_DATA1_SONY )
-					{	/* DATA 1 */
-						set_bit_data = ON;
-					}
-					else
-					{	/*DATA 0*/
-						set_bit_data = OFF;
-					}
-				}
-			}
-			/* DAIKIN or DAIKIN2 判定 */
-			else if( uc_format_type == FORMATCODE_DAIKIN || uc_format_type == FORMATCODE_DAIKIN2 )
-			{
-				if(DATACODE_MIN_DAI <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= DATACODE_MAX_DAI)
-				{
-					if( ui_off_count >= DATACODE_DATA1_DAI )
-					{	/* DATA 1 */
-						set_bit_data = ON;
-					}
-					else
-					{	/*DATA 0*/
-						set_bit_data = OFF;
-					}
-				}
-			}
-			/* MITSUBISHI判定 */
-			else if( uc_format_type == FORMATCODE_MITSU )
-			{
-				if(DATACODE_MIN_M <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= DATACODE_MAX_M)
-				{
-					if( ui_off_count >= DATACODE_DATA1_M )
-					{	/* DATA 1 */
-						set_bit_data = ON;
-					}
-					else
-					{	/*DATA 0*/
-						set_bit_data = OFF;
-					}
-				}
-			}
 
 			if( set_bit_data == ON || set_bit_data == OFF )
 			{
 				byte_pos = ui_data_pos / 8;
 				bit_pos = ui_data_pos % 8;
 				
-				if(uc_read_code_type == CODE_TYPE_EXTENSION)
-				{	// 拡張の時
-					if( 0 <= byte_pos && byte_pos < READBUFFER_DATA_AREA_SIZE_EX )
+				if( 0 <= byte_pos && byte_pos < READBUFFER_DATA_SIZE )
+				{
+					if( set_bit_data == ON )
 					{
-						if( set_bit_data == ON )
-						{
-							uc_read_buff[byte_pos+(READBUFFER_SIZE_EX-READBUFFER_DATA_AREA_SIZE_EX)] = uc_read_buff[byte_pos+(READBUFFER_SIZE_EX-READBUFFER_DATA_AREA_SIZE_EX)] | (bit_mask_data << bit_pos);
-						}
-						else if ( set_bit_data == OFF )
-						{
-							uc_read_buff[byte_pos+(READBUFFER_SIZE_EX-READBUFFER_DATA_AREA_SIZE_EX)] = uc_read_buff[byte_pos+(READBUFFER_SIZE_EX-READBUFFER_DATA_AREA_SIZE_EX)] & ~(bit_mask_data << bit_pos);
-						}		
+						uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] = uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] | (bit_mask_data << bit_pos);
 					}
-				}
-				else
-				{	// 標準のときは
-					if( 0 <= byte_pos && byte_pos < READBUFFER_DATA_SIZE )
+					else if ( set_bit_data == OFF )
 					{
-						if( set_bit_data == ON )
-						{
-							uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] = uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] | (bit_mask_data << bit_pos);
-						}
-						else if ( set_bit_data == OFF )
-						{
-							uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] = uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] & ~(bit_mask_data << bit_pos);
-						}		
-					}
+						uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] = uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] & ~(bit_mask_data << bit_pos);
+					}		
 				}
 				
 				ui_data_pos++;
 			}
 
-			if(uc_read_code_type == CODE_TYPE_EXTENSION)
-			{	// 拡張
-				// データ部が２つに分かれている場合
-				if((uc_format_type == FORMATCODE_KADEN || uc_format_type == FORMATCODE_NEC || uc_format_type == FORMATCODE_DAIKIN || uc_format_type == FORMATCODE_DAIKIN2) 
-					&& DATA_CODE_INTERVAL_MIN_CNT <= ui_off_count && ui_off_count <= DATA_CODE_INTERVAL_MAX_CNT )
-				{
-					/* 2ndデータのリーダコード待ちへ */
-					uc_read_status = READSTATUS_2ND_READERCODE_WAIT;
-					/* 1stデータのデータ長をセット */
-					uc_first_data_bit = (unsigned char)(ui_data_pos & 0xFF);
-				}
-				if(ui_off_count > DATA_CODE_INTERVAL_MAX_CNT || ui_data_pos == DATA_MAX_BITS )
-				{
-					/* 受信状態インクリメント */
-					uc_read_status = READSTATUS_READ_END;
-					/* 1stデータのデータ長をセット */
-					uc_first_data_bit = (unsigned char)(ui_data_pos & 0xFF);
-				}
+			if(ui_off_count > READCODE_END_CNT || ui_data_pos == DATA_MAX_BITS )
+			{
+				/* 受信状態インクリメント */
+				uc_read_status = READSTATUS_READ_END;
+				/* 1stデータのデータ長をセット */
+				uc_first_data_bit = (unsigned char)(ui_data_pos & 0xFF);
 			}
-			else
-			{	// 標準
-				if(ui_off_count > READCODE_END_CNT || ui_data_pos == DATA_MAX_BITS )
-				{
-					/* 受信状態インクリメント */
-					uc_read_status = READSTATUS_READ_END;
-					/* 1stデータのデータ長をセット */
-					uc_first_data_bit = (unsigned char)(ui_data_pos & 0xFF);
-				}
-			}		
 	
-
-			/* カウンタリセット */
-			ui_on_count = 1;	/* 今回ONなので0ではなく1をセット */
-			ui_off_count = 0;
-		}
-		/* データ受信待ち？ */
-		else if ( uc_read_status == READSTATUS_2ND_READERCODE_WAIT )
-		{
-			/* 家電協判定 */
-			if( uc_format_type == FORMATCODE_KADEN )
-			{
-				if(READERCODE_MIN_KADEN <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= READERCODE_MAX_KADEN)
-				{
-//					if( (ui_off_count*(READERCODE_ON_T_KADEN-1)) < ui_on_count && ui_on_count < (ui_off_count*(READERCODE_ON_T_KADEN+1)))
-//					{
-//						uc_format_type = FORMATCODE_KADEN;
-//					}
-					
-					/* カウンタリセット */
-					ui_on_count = 1;	/* 今回ONなので0ではなく1をセット */
-					ui_off_count = 0;
-
-					/* 受信状態インクリメントを2ndデータ受信待ちへ */
-					uc_read_status = READSTATUS_2ND_DATA_WAIT;
-				}
-			}
-			/* NEC判定 */
-			else if( uc_format_type == FORMATCODE_NEC )
-			{
-				if(READERCODE_MIN_NEC <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= READERCODE_MAX_NEC)
-				{
-//					if( (ui_off_count*(READERCODE_ON_T_NEC-1)) < ui_on_count && ui_on_count < (ui_off_count*(READERCODE_ON_T_NEC+1)))
-//					{
-//						uc_format_type = FORMATCODE_NEC;
-//					}
-					
-					/* カウンタリセット */
-					ui_on_count = 1;	/* 今回ONなので0ではなく1をセット */
-					ui_off_count = 0;
-
-					/* 受信状態インクリメントを2ndデータ受信待ちへ */
-					uc_read_status = READSTATUS_2ND_DATA_WAIT;
-				}	
-			}
-			/* DAIKIN判定 */
-			else if( uc_format_type == FORMATCODE_DAIKIN )
-			{
-				if(READERCODE_MIN_DAI <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= READERCODE_MAX_DAI)
-				{
-//					if( (ui_off_count*(READERCODE_ON_T_DAI-1)) < ui_on_count && ui_on_count < (ui_off_count*(READERCODE_ON_T_DAI+1)))
-//					{
-//						uc_format_type = FORMATCODE_DAIKIN;
-//					}
-
-					/* カウンタリセット */
-					ui_on_count = 1;	/* 今回ONなので0ではなく1をセット */
-					ui_off_count = 0;
-
-					/* 受信状態インクリメントを2ndデータ受信待ちへ */
-					uc_read_status = READSTATUS_2ND_DATA_WAIT;
-				}	
-			}
-			/* DAIKIN2判定 */
-			else if( uc_format_type == FORMATCODE_DAIKIN2 )
-			{
-				if(READERCODE_MIN_DAI2 <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= READERCODE_MAX_DAI2)
-				{
-//					if( (ui_on_count*(READERCODE_OFF_T_DAI2-1)) < ui_off_count && ui_off_count < (ui_on_count*(READERCODE_OFF_T_DAI2+1)))
-//					{
-//						uc_format_type = FORMATCODE_DAIKIN2;
-//					}
-					
-					/* カウンタリセット */
-					ui_on_count = 1;	/* 今回ONなので0ではなく1をセット */
-					ui_off_count = 0;
-
-					/* 受信状態インクリメントを2ndデータ受信待ちへ */
-					uc_read_status = READSTATUS_2ND_DATA_WAIT;
-				}
-			}
-
-
-			if( ui_off_count > READCODE_END_CNT || ui_data_pos == DATA_MAX_BITS )
-			{
-				/* 受信状態インクリメント */
-				uc_read_status = READSTATUS_READ_END;
-			}
-		}
-		/* データ受信待ち？ */
-		else if ( uc_read_status == READSTATUS_2ND_DATA_WAIT )
-		{
-			set_bit_data = 0xFF;
-
-			/* 家電協判定 */
-			if( uc_format_type == FORMATCODE_KADEN )
-			{
-				if(DATACODE_MIN_KADEN <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= DATACODE_MAX_KADEN)
-				{
-					if( ui_off_count >= DATACODE_DATA1_KADEN )
-					{	/* DATA 1 */
-						set_bit_data = ON;
-					}
-					else
-					{	/*DATA 0*/
-						set_bit_data = OFF;
-					}
-				}
-			}
-			/* NEC判定 */
-			else if( uc_format_type == FORMATCODE_NEC )
-			{
-				if(DATACODE_MIN_NEC <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= DATACODE_MAX_NEC)
-				{
-					if( ui_off_count >= DATACODE_DATA1_NEC )
-					{	/* DATA 1 */
-						set_bit_data = ON;
-					}
-					else
-					{	/*DATA 0*/
-						set_bit_data = OFF;
-					}
-				}
-			}
-			/* DAIKIN判定 */
-			else if( uc_format_type == FORMATCODE_DAIKIN || uc_format_type == FORMATCODE_DAIKIN2 )
-			{
-				if(DATACODE_MIN_DAI <= (ui_on_count + ui_off_count)
-					&& (ui_on_count + ui_off_count) <= DATACODE_MAX_DAI)
-				{
-					if( ui_off_count >= DATACODE_DATA1_DAI )
-					{	/* DATA 1 */
-						set_bit_data = ON;
-					}
-					else
-					{	/*DATA 0*/
-						set_bit_data = OFF;
-					}
-				}
-			}
-
-
-			if( set_bit_data == ON || set_bit_data == OFF )
-			{
-				byte_pos = ui_data_pos / 8;
-				bit_pos = ui_data_pos % 8;
-				
-				if(uc_read_code_type == CODE_TYPE_EXTENSION)
-				{	// 拡張の時
-					if( 0 <= byte_pos && byte_pos < READBUFFER_DATA_AREA_SIZE_EX )
-					{
-						if( set_bit_data == ON )
-						{
-							uc_read_buff[byte_pos+(READBUFFER_SIZE_EX-READBUFFER_DATA_AREA_SIZE_EX)] = uc_read_buff[byte_pos+(READBUFFER_SIZE_EX-READBUFFER_DATA_AREA_SIZE_EX)] | (bit_mask_data << bit_pos);
-						}
-						else if ( set_bit_data == OFF )
-						{
-							uc_read_buff[byte_pos+(READBUFFER_SIZE_EX-READBUFFER_DATA_AREA_SIZE_EX)] = uc_read_buff[byte_pos+(READBUFFER_SIZE_EX-READBUFFER_DATA_AREA_SIZE_EX)] & ~(bit_mask_data << bit_pos);
-						}		
-					}
-				}
-				else
-				{	// 標準のときは
-					if( 0 <= byte_pos && byte_pos < READBUFFER_DATA_SIZE )
-					{
-						if( set_bit_data == ON )
-						{
-							uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] = uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] | (bit_mask_data << bit_pos);
-						}
-						else if ( set_bit_data == OFF )
-						{
-							uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] = uc_read_buff[byte_pos+(READBUFFER_SIZE-READBUFFER_DATA_SIZE)] & ~(bit_mask_data << bit_pos);
-						}		
-					}
-				}
-				
-				ui_data_pos++;
-			}
-
-			if( ui_off_count > READCODE_END_CNT || ui_data_pos == DATA_MAX_BITS )
-			{
-				/* 受信状態インクリメント */
-				uc_read_status = READSTATUS_READ_END;
-			}
 
 			/* カウンタリセット */
 			ui_on_count = 1;	/* 今回ONなので0ではなく1をセット */
@@ -2612,59 +1477,7 @@ int RemoconReceiveData(void)
 	/* データ読み込み完了？ */
 	if ( uc_read_status == READSTATUS_READ_END ){
 		/* データ確定 */
-		if(uc_read_code_type == CODE_TYPE_EXTENSION)
-		{	// 拡張の時はそのまま
-
-			if(uc_first_data_bit == (unsigned char)(ui_data_pos & 0xFF))
-			{
-				set_size_data = uc_first_data_bit;
-				set_2nd_size_data = 0;
-			}
-			else
-			{
-				set_size_data = uc_first_data_bit;
-				set_2nd_size_data = (unsigned char)ui_data_pos - uc_first_data_bit;
-				
-#if 0
-				// First DataとSecond Data数が一致している場合は同じデータかをチェック
-				if(set_size_data == set_2nd_size_data )
-				{
-					samae_bit_count = 0;
-					for(fi = 0; fi < set_size_data; fi++)
-					{
-						byte_pos = fi / 8;
-						bit_pos = fi % 8;
-						first_bit = (uc_read_buff[byte_pos+(READBUFFER_SIZE_EX-READBUFFER_DATA_AREA_SIZE_EX)] >> bit_pos) & 0x01;
-						byte_pos = (set_size_data + fi) / 8;
-						bit_pos = (set_size_data + fi) % 8;
-						second_bit = (uc_read_buff[byte_pos+(READBUFFER_SIZE_EX-READBUFFER_DATA_AREA_SIZE_EX)] >> bit_pos) & 0x01;
-						if(first_bit != second_bit)
-						{
-							break;
-						}
-						else
-						{
-							samae_bit_count++;
-						}
-					}
-					if(set_size_data == samae_bit_count)
-					{
-						set_2nd_size_data = 0;
-					}		
-				}
-#endif
-			}
-			// 8bit未満はノイズとして無視
-			if(set_size_data < 8)
-			{
-				set_size_data = 0;
-				set_2nd_size_data = 0;
-			}
-		}
-		else
-		{	// 標準のときは、1/4
-			set_size_data = (unsigned char)((ui_data_pos>>2) & 0xFF);
-		}
+		set_size_data = (unsigned char)((ui_data_pos>>2) & 0xFF);
 		
 		/* データありの場合（リーダコードなしデータの場合にノイズをひろうことがある） */
 		if( set_size_data > 0 )
@@ -2674,16 +1487,8 @@ int RemoconReceiveData(void)
 				uc_read_buff[fi] = 0;
 			}
 
-			if(uc_read_code_type == CODE_TYPE_EXTENSION)
-			{	// 拡張のときは 1バイト目と2バイト目にデータ長をセット
-				uc_fix_read_buff[1] = set_size_data;
-				uc_fix_read_buff[2] = set_2nd_size_data;
-			}
-			else
-			{	// 標準のとき
-				/* [0]の上位4byteにデータ長をセット */
-				uc_fix_read_buff[0] |= (unsigned char)((set_size_data << 4) & 0xFF);
-			}
+			/* [0]の上位4byteにデータ長をセット */
+			uc_fix_read_buff[0] |= (unsigned char)((set_size_data << 4) & 0xFF);
 		}
 		else
 		{	/* ノイズをひろった場合は、データクリアして再読み込み */
@@ -2697,7 +1502,6 @@ int RemoconReceiveData(void)
 		ui_next_data_wait_cnt = 0;
 		ui_data_pos = 0;
 		uc_first_data_bit = 0;
-		uc_format_type = FORMATCODE_UNKNOWN;
 	}
 	/* 次データ待ち */
 	if ( uc_read_status == READSTATUS_NEXT_DATA_WAIT ){
@@ -2728,5 +1532,10 @@ int RemoconReceiveData(void)
 			
     return ret_code; 
 }
+const unsigned char rom IRDATA[][10] =
+{
+	{MODE_KEYBOARD,0x52,0,0x82,0x20,0x10,0x0d,0xf2,0,0},
+	{MODE_KEYBOARD,0x52,0,0x82,0x20,0x10,0x0d,0xf2,0,0}
+};
 /** EOF main.c *************************************************/
 #endif
