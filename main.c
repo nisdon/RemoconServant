@@ -164,7 +164,8 @@ int RemoconReceiveData(void);
 #define READBUFFER_SIZE					READBUFFER_READER_SIZE+READBUFFER_DATA_SIZE	/* 受信バッファサイズ　リーダコード(1byte) + データ(6byte) */
 #define READBUFFER_FORMAT_SIZE_EX		1		/* 拡張 受信バッファサイズ　フォーマットコード(1byte) */
 #define READBUFFER_DATA_SIZE_EX			2		/* 拡張 受信バッファサイズ　データサイズ（単位bit）(1byte) */
-#define READBUFFER_DATA_AREA_SIZE_EX	32		/* 拡張 受信バッファサイズ　データエリアサイズ(32byte) */
+//#define READBUFFER_DATA_AREA_SIZE_EX	32		/* 拡張 受信バッファサイズ　データエリアサイズ(32byte) */
+#define READBUFFER_DATA_AREA_SIZE_EX	8		/* 拡張 受信バッファサイズ　データエリアサイズ(32byte) */
 #define READBUFFER_SIZE_EX				READBUFFER_FORMAT_SIZE_EX+READBUFFER_DATA_SIZE_EX+READBUFFER_DATA_AREA_SIZE_EX	/* 拡張 受信バッファサイズ　ダコード(1byte) + データ(32byte) */
 
 #define FORMATCODE_UNKNOWN				0		/* 赤外線通信フォーマット 不明 */
@@ -182,7 +183,8 @@ int RemoconReceiveData(void);
 #define DATA_CODE_INTERVAL_MIN_CNT		40 		/* データが２つにわかれているコードのデータ間最小間隔 40 = 4[ms] / 0.1[ms] */
 #define DATA_CODE_INTERVAL_MAX_CNT		500 	/* データが２つにわかれているコードのデータ間最大間隔 500 = 50[ms] / 0.1[ms] */
 #define DATA_CODE_INTERVAL_SEND_CNT		260 	/* データが２つにわかれているコードの送信データ間隔 300 = 30[ms] / 0.1[ms] */
-#define DATA_MAX_BITS					0xFF	/* データコードの最大ビット長 */
+//#define DATA_MAX_BITS					0xFF	/* データコードの最大ビット長 */
+#define DATA_MAX_BITS					0x3F	/* データコードの最大ビット長 */
 
 /* NEC */
 #define READERCODE_ON_NEC			90		/* リーダコード ON時間 9.0ms / 0.1ms */
@@ -1447,7 +1449,7 @@ const unsigned char rom IRDATA[][10] =
 	{MODE_KEYBOARD,0x70,0x02,0x82,0x20,0x10,0x42,0xbd,0,0},	// 5
 	{MODE_KEYBOARD,0x71,0x02,0x82,0x20,0x10,0x43,0xbc,0,0},	// 6
 	{MODE_KEYBOARD,0x72,0x02,0x82,0x20,0x10,0x45,0xba,0,0},	// 7
-	{MODE_KEYBOARD,0x72,0x02,0x82,0x20,0x10,0x26,0xd9,0,0},	// 8
+	{MODE_KEYBOARD,0x73,0x02,0x82,0x20,0x10,0x26,0xd9,0,0},	// 8
 	{MODE_KEYBOARD,0x68,0x01,0x82,0x20,0x10,0x47,0xb8,0,0},	// 9
 	{MODE_KEYBOARD,0x69,0x01,0x82,0x20,0x10,0x4a,0xb5,0,0},	// 0
 	{MODE_KEYBOARD,0x6b,0x02,0x82,0x20,0x10,0x49,0xb6,0,0},	// *
