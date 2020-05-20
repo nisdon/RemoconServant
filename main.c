@@ -251,6 +251,7 @@ unsigned char debug_ary[4] = {0};
 
 // 追加メモリ
 unsigned char uc_key_off = 0;
+unsigned int wait_time = 0;
 
 
 // usbでの送信に使うバッファはここで宣言
@@ -377,6 +378,9 @@ const unsigned char rom IRDATA[][10];
 
 			/* 赤外線リモコンのデータ受信 */
 			RemoconReceiveData();
+
+			if(wait_time)
+				wait_time--;
 		}
 
 	}	//This return will be a "retfie", since this is in a #pragma interruptlow section 
@@ -740,8 +744,8 @@ void ProcessIO(void)
 									keyboard_buffer[pressed_keys] = eeprom_1data[EEPROM_DATA_VALUE];
 									pressed_keys++;
 								}
-//								hid_report_out_flag = 5;
-								hid_report_out_flag = 1;
+								wait_time = 5000;
+								uc_key_off = 1;
 								break;
 							case MODE_VOLUME:
 							    switch(eeprom_1data[EEPROM_DATA_VALUE])
@@ -787,29 +791,58 @@ void ProcessIO(void)
     }
     if(!HIDTxHandleBusy(lastINTransmissionKeyboard))
     {	       	//Load the HID buffer
-		/* リピート終了チェック */
-		if(uc_key_off == 1 &&
-		   hid_report_out_flag == 0)
-		{	// キーOFF
+		if(uc_key_off == 1)
+		{
+			hid_report_in[0] = keyboard_buffer[0];
+			hid_report_in[1] = keyboard_buffer[1];
+			hid_report_in[2] = keyboard_buffer[2];
+			hid_report_in[3] = keyboard_buffer[3];
+			hid_report_in[4] = keyboard_buffer[4];
+			hid_report_in[5] = keyboard_buffer[5];
+			hid_report_in[6] = keyboard_buffer[6];
+			hid_report_in[7] = keyboard_buffer[7];
+			hid_report_out_flag = 5;
+			uc_key_off = 2;
+		}
+		else if(uc_key_off == 2)
+		{
+			hid_report_in[0] =
+			hid_report_in[2] =
+			hid_report_in[3] =
+			hid_report_in[4] =
+			hid_report_in[5] =
+			hid_report_in[6] =
+			hid_report_in[7] = 0;
+		
+			if(!wait_time)
+			{
+				wait_time = 1400;
+				uc_key_off = 1;
+			}
+		}
+		else if(uc_key_off == 3)
+		{
+			hid_report_in[0] =
+			hid_report_in[2] =
+			hid_report_in[3] =
+			hid_report_in[4] =
+			hid_report_in[5] =
+			hid_report_in[6] =
+			hid_report_in[7] = 0;
+
 			keyboard_buffer[0] =
-				keyboard_buffer[2] =
-				keyboard_buffer[3] =
-				keyboard_buffer[4] =
-				keyboard_buffer[5] =
-				keyboard_buffer[6] =
-				keyboard_buffer[7] = 0;
-			hid_report_out_flag = 1;
+			keyboard_buffer[1] =
+			keyboard_buffer[2] =
+			keyboard_buffer[3] =
+			keyboard_buffer[4] =
+			keyboard_buffer[5] =
+			keyboard_buffer[6] =
+			keyboard_buffer[7] = 0;
+
+			hid_report_out_flag = 2;
+			wait_time = 0;
 			uc_key_off = 0;
 		}
-
-    	hid_report_in[0] = keyboard_buffer[0];
-    	hid_report_in[1] = keyboard_buffer[1];
-		hid_report_in[2] = keyboard_buffer[2];
-	    hid_report_in[3] = keyboard_buffer[3];
-    	hid_report_in[4] = keyboard_buffer[4];
-    	hid_report_in[5] = keyboard_buffer[5];
-    	hid_report_in[6] = keyboard_buffer[6];
-    	hid_report_in[7] = keyboard_buffer[7];
 
 		if( hid_report_out_flag > 0 )
 		{
@@ -818,7 +851,7 @@ void ProcessIO(void)
 			hid_report_out_flag--;
 		}	
 	}
-   if(!HIDTxHandleBusy(lastTransmission2))
+	if(!HIDTxHandleBusy(lastTransmission2))
     {
         volume_input[0] = volume_buffer[0];
 		volume_buffer[0] = 0;
@@ -1403,7 +1436,7 @@ int RemoconReceiveData(void)
 			/* カウンタリセット */
 			ui_on_count = 0;
 			ui_off_count = 0;
-			uc_key_off = 1;
+			uc_key_off = 3;
 		}
 	}
 		
