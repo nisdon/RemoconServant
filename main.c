@@ -266,6 +266,7 @@ unsigned char hid_report_out_flag = 0;
 unsigned char ReceivedDataBuffer[RX_BUFFER_SIZE];
 unsigned char ToSendDataBuffer[TX_BUFFER_SIZE];
 const unsigned char rom IRDATA[][10];
+const BYTE rom zero_report_in[8];
 
 #pragma udata
 
@@ -744,7 +745,6 @@ void ProcessIO(void)
 									keyboard_buffer[pressed_keys] = eeprom_1data[EEPROM_DATA_VALUE];
 									pressed_keys++;
 								}
-								wait_time = 5000;
 								uc_key_off = 1;
 								break;
 							case MODE_VOLUME:
@@ -801,34 +801,6 @@ void ProcessIO(void)
 			hid_report_in[5] = keyboard_buffer[5];
 			hid_report_in[6] = keyboard_buffer[6];
 			hid_report_in[7] = keyboard_buffer[7];
-			hid_report_out_flag = 5;
-			uc_key_off = 2;
-		}
-		else if(uc_key_off == 2)
-		{
-			hid_report_in[0] =
-			hid_report_in[2] =
-			hid_report_in[3] =
-			hid_report_in[4] =
-			hid_report_in[5] =
-			hid_report_in[6] =
-			hid_report_in[7] = 0;
-		
-			if(!wait_time)
-			{
-				wait_time = 1400;
-				uc_key_off = 1;
-			}
-		}
-		else if(uc_key_off == 3)
-		{
-			hid_report_in[0] =
-			hid_report_in[2] =
-			hid_report_in[3] =
-			hid_report_in[4] =
-			hid_report_in[5] =
-			hid_report_in[6] =
-			hid_report_in[7] = 0;
 
 			keyboard_buffer[0] =
 			keyboard_buffer[1] =
@@ -839,15 +811,25 @@ void ProcessIO(void)
 			keyboard_buffer[6] =
 			keyboard_buffer[7] = 0;
 
-			hid_report_out_flag = 2;
-			wait_time = 0;
-			uc_key_off = 0;
+			wait_time = 4000;
+			hid_report_out_flag = 5;
+			uc_key_off++;
+		}
+		else if(uc_key_off == 2)
+		{
+			if(!wait_time)
+			{
+				wait_time = 1200;
+				hid_report_out_flag = 5;
+			}
 		}
 
 		if( hid_report_out_flag > 0 )
 		{
-    		//Send the 8 byte packet over USB to the host.
-			lastINTransmissionKeyboard = HIDTxPacket(HID_EP3, (BYTE*)hid_report_in, 0x08);
+			if(hid_report_out_flag == 5)
+				lastINTransmissionKeyboard = HIDTxPacket(HID_EP3, (BYTE*)hid_report_in, 0x08);
+			else
+				lastINTransmissionKeyboard = HIDTxPacket(HID_EP3, (BYTE*)zero_report_in, 0x08);
 			hid_report_out_flag--;
 		}	
 	}
@@ -1436,7 +1418,7 @@ int RemoconReceiveData(void)
 			/* カウンタリセット */
 			ui_on_count = 0;
 			ui_off_count = 0;
-			uc_key_off = 3;
+			uc_key_off = 0;
 		}
 	}
 		
@@ -1446,6 +1428,7 @@ int RemoconReceiveData(void)
     return ret_code; 
 }
 
+const BYTE rom zero_report_in[8] = {0,0,0,0,0,0,0,0};
 #if 0
 // S3U2リモコン
 const unsigned char rom IRDATA[][10] =
