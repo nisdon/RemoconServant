@@ -251,6 +251,7 @@ unsigned char debug_ary[4] = {0};
 
 // 追加メモリ
 unsigned char uc_key_off = 0;
+unsigned char uc_step = 0;
 unsigned int wait_time = 0;
 
 
@@ -745,7 +746,7 @@ void ProcessIO(void)
 									keyboard_buffer[pressed_keys] = eeprom_1data[EEPROM_DATA_VALUE];
 									pressed_keys++;
 								}
-								uc_key_off = 1;
+								uc_step = 1;
 								break;
 							case MODE_VOLUME:
 							    switch(eeprom_1data[EEPROM_DATA_VALUE])
@@ -791,7 +792,14 @@ void ProcessIO(void)
     }
     if(!HIDTxHandleBusy(lastINTransmissionKeyboard))
     {	       	//Load the HID buffer
-		if(uc_key_off == 1)
+		if(uc_key_off)
+		{
+			if(uc_step == 3)
+				hid_report_out_flag = 0x02;
+			uc_key_off = 0;
+			uc_step = 0;
+		}
+		if(uc_step == 1)
 		{
 			hid_report_in[0] = keyboard_buffer[0];
 			hid_report_in[1] = keyboard_buffer[1];
@@ -811,27 +819,40 @@ void ProcessIO(void)
 			keyboard_buffer[6] =
 			keyboard_buffer[7] = 0;
 
-			wait_time = 4000;
-			hid_report_out_flag = 5;
-			uc_key_off++;
+			if(hid_report_in[2] < 0x4f || 0x52 < hid_report_in[2])
+			{
+				hid_report_out_flag = 0x80;
+				uc_step = 3;
+			}
+			else
+			{
+				wait_time = 4000;
+				hid_report_out_flag = 0x82;
+				uc_step = 2;
+			}
 		}
-		else if(uc_key_off == 2)
+		else if(uc_step == 2)
 		{
 			if(!wait_time)
 			{
 				wait_time = 1200;
-				hid_report_out_flag = 5;
+				hid_report_out_flag = 0x82;
 			}
 		}
 
-		if( hid_report_out_flag > 0 )
+		if( hid_report_out_flag )
 		{
-			if(hid_report_out_flag == 5)
+			if( hid_report_out_flag & 0x80 )
+			{
 				lastINTransmissionKeyboard = HIDTxPacket(HID_EP3, (BYTE*)hid_report_in, 0x08);
+				hid_report_out_flag &= 0x7f;
+			}
 			else
+			{
 				lastINTransmissionKeyboard = HIDTxPacket(HID_EP3, (BYTE*)zero_report_in, 0x08);
-			hid_report_out_flag--;
-		}	
+				hid_report_out_flag--;
+			}
+		}
 	}
 	if(!HIDTxHandleBusy(lastTransmission2))
     {
@@ -1418,7 +1439,7 @@ int RemoconReceiveData(void)
 			/* カウンタリセット */
 			ui_on_count = 0;
 			ui_off_count = 0;
-			uc_key_off = 0;
+			uc_key_off = 1;
 		}
 	}
 		
