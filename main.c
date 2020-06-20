@@ -95,7 +95,13 @@ int RemoconReceiveData(void);
 #define	MODE_VOLUME		2
 //#define	MODE_JOYSTICK	2
 //#define EEPROM_DATA_NUM			20	/* EEPROM格納データ数 */
-#define EEPROM_DATA_NUM			50	/* EEPROM格納データ数 */
+#define REMOCON_TYPE	1		/* type is HDUS */
+#ifndef REMOCON_TYPE
+#define EEPROM_DATA_NUM			50	/* EEPROM格納データ数 PLEX */
+#else
+#define EEPROM_DATA_NUM			45	/* EEPROM格納データ数 HDUS */
+#endif
+
 #define EEPROM_DATA_SIZE		10	/* EEPROM格納１データのサイズ */
 #define EEPROM_DATA_TOTAL_SIZE		EEPROM_DATA_NUM*EEPROM_DATA_SIZE	/* EEPROM格納データのトータルサイズ */
 #define	EEPROM_DATA_MODE		0	//	0:モード
@@ -1450,7 +1456,7 @@ int RemoconReceiveData(void)
 }
 
 const BYTE rom zero_report_in[8] = {0,0,0,0,0,0,0,0};
-#if 0
+#ifndef REMOCON_TYPE
 // S3U2リモコン
 const unsigned char rom IRDATA[][10] =
 {
