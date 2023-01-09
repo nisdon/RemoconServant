@@ -88,6 +88,8 @@ void UserInit(void);
 void YourHighPriorityISRCode();
 void YourLowPriorityISRCode();
 int RemoconReceiveData(void);
+void USBCBSendResume(void);
+
 
 /** DECLARATIONS ***************************************************/
 #define MODE_MOUSE		0
@@ -378,6 +380,22 @@ const BYTE rom zero_report_in[8];
 			INTCONbits.TMR0IF = 0;
 			WriteTimer0(WRITE_TIMER0_COUNT);
 
+			/* スリープ解除チェック */
+			if((USBDeviceState == CONFIGURED_STATE)
+			   && (USBIsDeviceSuspended() == TRUE)
+			   && (USBGetRemoteWakeupStatus() == TRUE))
+			{
+				if( !PIN5 == ON )
+				{	// To resume on anykey.
+//					USBWakeFromSuspend();
+					USBCBSendResume();
+					uc_key_off = 0;
+					uc_step = 0;
+					wait_time = 0;
+				}
+				return;
+			}
+
 			/* 赤外線リモコンのデータ受信 */
 			RemoconReceiveData();
 
@@ -448,11 +466,10 @@ void main(void)
         				  // USBDeviceTasks() function does not take very long to
         				  // execute (~50 instruction cycles) before it returns.
         #endif
-    				  
 
 		// Application-specific tasks.
 		// Application related code may be added here, or in the ProcessIO() function.
-        ProcessIO();        
+        ProcessIO();
     }//end while
 }//end main
 
@@ -651,7 +668,8 @@ void ProcessIO(void)
 
 
     // User Application USB tasks
-    if((USBDeviceState < CONFIGURED_STATE)||(USBSuspendControl==1)) return;
+    if((USBDeviceState < CONFIGURED_STATE) || (USBIsDeviceSuspended() == TRUE))
+	  return;
 
 	/* 赤外線受信データをコピーする */
 	/* 一旦フラグをクリア */
@@ -927,7 +945,7 @@ void USBCBSuspend(void)
 	//IMPORTANT NOTE: Do not clear the USBActivityIF (ACTVIF) bit here.  This bit is 
 	//cleared inside the usb_device.c file.  Clearing USBActivityIF here will cause 
 	//things to not work as intended.	
-	
+
 
     #if defined(__C30__)
     #if 0
@@ -1201,15 +1219,29 @@ void USBCBInitEP(void)
 void USBCBSendResume(void)
 {
     static WORD delay_count;
-    
-    USBResumeControl = 1;                // Start RESUME signaling
-    
-    delay_count = 1800U;                // Set RESUME line for 1-13 ms
-    do
-    {
-        delay_count--;
-    }while(delay_count);
-    USBResumeControl = 0;
+	if(USBGetRemoteWakeupStatus() == TRUE)
+	{
+		if(USBIsBusSuspended() ==TRUE)
+		{
+			USBCBWakeFromSuspend();
+			USBSuspendControl = 0;
+			USBBusIsSuspended = FALSE;
+			delay_count = 3600U;
+			do
+			{
+				delay_count--;
+			}while(delay_count);
+
+			USBResumeControl = 1;
+			delay_count = 1800U;
+			do
+			{
+				delay_count--;
+			}while(delay_count);
+			USBResumeControl = 0;
+			USBUnmaskInterrupts();
+		}
+	}
 }
 
 
