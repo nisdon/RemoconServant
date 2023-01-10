@@ -255,6 +255,7 @@ unsigned char debug_ary[4] = {0};
 unsigned char uc_key_off = 0;
 unsigned char uc_step = 0;
 unsigned int wait_time = 0;
+unsigned char sleep_wait = 0;
 
 
 // usbでの送信に使うバッファはここで宣言
@@ -380,27 +381,30 @@ const BYTE rom zero_report_in[8];
 			INTCONbits.TMR0IF = 0;
 			WriteTimer0(WRITE_TIMER0_COUNT);
 
-			/* スリープ解除チェック */
 			if((USBDeviceState == CONFIGURED_STATE)
 			   && (USBIsDeviceSuspended() == TRUE)
 			   && (USBGetRemoteWakeupStatus() == TRUE))
 			{
+				/* スリープ解除チェック */
 				if( !PIN5 == ON )
+					sleep_wait++;
+				else
+					sleep_wait = 0;
+
+				if( sleep_wait > 50 ) /* 5ms 継続 */
 				{	// To resume on anykey.
 //					USBWakeFromSuspend();
 					USBCBSendResume();
-					uc_key_off = 0;
-					uc_step = 0;
-					wait_time = 0;
 				}
-				return;
 			}
+			else
+			{
+				/* 赤外線リモコンのデータ受信 */
+				RemoconReceiveData();
 
-			/* 赤外線リモコンのデータ受信 */
-			RemoconReceiveData();
-
-			if(wait_time)
-				wait_time--;
+				if(wait_time)
+					wait_time--;
+			}
 		}
 
 	}	//This return will be a "retfie", since this is in a #pragma interruptlow section 
@@ -946,6 +950,7 @@ void USBCBSuspend(void)
 	//cleared inside the usb_device.c file.  Clearing USBActivityIF here will cause 
 	//things to not work as intended.	
 
+	sleep_wait = 0;
 
     #if defined(__C30__)
     #if 0
