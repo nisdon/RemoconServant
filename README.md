@@ -1,4 +1,4 @@
-# RemoconServant.bin
+# RemoconServant
 ## 1. はじめに
 これは、BitTradeOne製 USB接続赤外線リモコンKIT専用のファームウェアです。  
 メディアプレイヤーアプリケーションKodiの制御を想定しています。  
